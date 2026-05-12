@@ -16,6 +16,7 @@
 - [x] wire Open-Meteo live weather forecast, geocoding, elevation, and soil moisture calls
 - [x] wire GDELT DOC live news article ingestion into alert reasoning
 - [x] wire Twilio WhatsApp outbound client and inbound webhook parsing/signature validation
+- [x] unblock full workspace production build
 
 ## Completed (Phase 1: In-Memory Demo)
 

@@ -12,6 +12,7 @@ Confidence: `high on structure and demo completeness, ready for presentation or 
 - investor, operator, and admin app shells (Fully implemented frontends with Next.js running on ports 3003, 3005, and 3004 respectively)
 - NestJS API shell (Fully implemented in-memory API with CORS enabled, running on port 4000)
 - AI worker shell (Deterministic AI pipelines implemented)
+- Full workspace build passes with `npm run build`.
 - shared type package (Fully populated domain contracts)
 - In-memory data stores for Farms, Investors, Matches, Deals, Reports, Notifications, and Admin Review items.
 - Integration provider contracts for weather, news, geospatial, and WhatsApp.

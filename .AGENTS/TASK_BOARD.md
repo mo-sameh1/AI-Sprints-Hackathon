@@ -9,6 +9,7 @@
 - [ ] add JWT Auth for admin, operator, and investor roles
 - [ ] replace weather/news mock providers with real alert APIs
 - [ ] add WhatsApp webhook route for operator message intake
+- [ ] add persistent object storage for operator-uploaded media
 
 ## Completed (Phase 2: Persistence & Integrations)
 
@@ -17,6 +18,10 @@
 - [x] wire GDELT DOC live news article ingestion into alert reasoning
 - [x] wire Twilio WhatsApp outbound client and inbound webhook parsing/signature validation
 - [x] unblock full workspace production build
+- [x] implement operator-side farm photo, document, and voice-note upload processing
+- [x] implement operator reporting form wired to the Reports API
+- [x] implement operator submission status tracking wired to the Farms API
+- [x] install local Node/npm runtime and verify operator/API build and runtime routes
 
 ## Completed (Phase 1: In-Memory Demo)
 

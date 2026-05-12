@@ -11,4 +11,5 @@ coverage/
 .DS_Store
 Thumbs.db
 tmp/
-
+.tools/
+.run-logs/

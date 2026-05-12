@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
@@ -20,7 +18,7 @@
   --radius: 12px;
 }
 
-html, body { height: 100%; font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+html, body { height: 100%; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
 
 .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 32px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
 .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
@@ -66,3 +64,29 @@ html, body { height: 100%; font-family: 'Inter', system-ui, sans-serif; backgrou
 
 .status-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
 .status-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+
+.upload-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.upload-zone { min-height: 112px; border: 1px dashed rgba(34,197,94,0.28); border-radius: 8px; background: rgba(22,163,74,0.06); padding: 14px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; transition: all 0.15s; }
+.upload-zone:hover { background: var(--accent-dim); border-color: rgba(34,197,94,0.45); }
+.upload-zone input { display: none; }
+.upload-action { margin-top: auto; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); color: var(--accent-light); font-size: 12px; font-weight: 700; padding: 7px 10px; }
+.upload-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); }
+.upload-status { border-radius: 999px; padding: 3px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.upload-status.processing { background: var(--accent-amber-dim); color: var(--accent-amber); }
+.upload-status.ready { background: var(--accent-dim); color: var(--accent-light); }
+.upload-status.error { background: rgba(239,68,68,0.12); color: #f87171; }
+.icon-button { width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); cursor: pointer; font-family: inherit; font-weight: 700; }
+.icon-button:hover { color: var(--text); background: var(--bg-card-hover); }
+.metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.metric-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 9px; font-size: 11px; font-weight: 700; text-transform: uppercase; background: var(--accent-dim); color: var(--accent-light); }
+.status-pill.pending_review { background: var(--accent-amber-dim); color: var(--accent-amber); }
+.status-pill.rejected { background: rgba(239,68,68,0.12); color: #f87171; }
+.status-pill.funded, .status-pill.completed { background: rgba(59,130,246,0.13); color: #93c5fd; }
+
+@media (max-width: 720px) {
+  .header { padding: 0 18px; }
+  .nav-links { gap: 2px; }
+  .nav-link { padding: 6px 8px; font-size: 12px; }
+  .form-grid-2, .upload-grid, .metric-grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@ai-sprints/shared-types": [
+        "packages/shared-types/src"
+      ],
+      "@ai-sprints/sdk": [
+        "packages/sdk/src"
+      ],
+      "@ai-sprints/ui": [
+        "packages/ui/src"
+      ]
+    }
+  }
+}
+

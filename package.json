@@ -1,0 +1,24 @@
+{
+  "name": "ai-sprints-hackathon",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Investor-first agricultural investing platform scaffold for the AI Sprints Hackathon.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w @ai-sprints/api",
+    "dev:investor": "npm run dev -w @ai-sprints/investor-web",
+    "dev:operator": "npm run dev -w @ai-sprints/operator-web",
+    "dev:admin": "npm run dev -w @ai-sprints/admin-web",
+    "dev:worker": "npm run dev -w @ai-sprints/ai-worker",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+

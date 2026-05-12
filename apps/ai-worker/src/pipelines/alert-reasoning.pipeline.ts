@@ -76,7 +76,7 @@ export function reasonAboutAlerts(
         (news.sentiment === 'negative'
           ? 'Recommend operator check-in to assess exposure.'
           : 'Positive market movement may support projected ROI.'),
-      sourceUrl: undefined,
+      sourceUrl: news.sourceUrl,
       actionRequired: news.sentiment === 'negative',
       createdAt: new Date().toISOString(),
     });

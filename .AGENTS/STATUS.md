@@ -16,6 +16,7 @@ Confidence: `high on structure and demo completeness, ready for presentation or 
 - In-memory data stores for Farms, Investors, Matches, Deals, Reports, Notifications, and Admin Review items.
 - Integration provider contracts for weather, news, geospatial, and WhatsApp.
 - Open-Meteo-backed weather forecasts, geocoding, elevation, and soil moisture are wired in the API.
+- GDELT-backed news ingestion is wired into notification alert reasoning with source URLs.
 
 ## What Is Not Done Yet
 
@@ -23,7 +24,7 @@ Confidence: `high on structure and demo completeness, ready for presentation or 
 - real auth (currently mock headers)
 - real WhatsApp integration or inbound webhook controller
 - real AI orchestration (currently deterministic pipelines simulating AI)
-- real news provider and real WhatsApp credentials/webhook controller
+- real WhatsApp credentials/webhook controller
 - real satellite NDVI or map-based water proximity provider
 
 ## Priority Order (Completed for MVP)

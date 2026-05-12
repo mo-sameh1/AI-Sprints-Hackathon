@@ -34,19 +34,18 @@ Date: 2026-05-12
 - Weather provider uses Open-Meteo forecast and geocoding APIs with no local API key required for non-commercial use.
 - Geospatial enrichment uses Open-Meteo elevation and soil moisture APIs.
 - Geospatial NDVI and nearest-water-body fields are still derived heuristics until a satellite/map provider is selected.
-- News provider still needs conversion from local stub to real article ingestion.
+- News provider uses GDELT DOC article search for real agriculture/market/policy signals and carries source URLs through alert reasoning.
 - WhatsApp provider defines send and inbound webhook parsing contracts, but no controller route is wired yet.
 
 ## Local Development Stubs
 
 - `WeatherProvider` uses Open-Meteo forecast/geocoding; no API key required for non-commercial use.
-- `NewsProvider` uses `mock-news`; no API key required.
+- `NewsProvider` uses GDELT DOC; no API key required.
 - `GeospatialProvider` uses Open-Meteo elevation/soil moisture; no API key required for non-commercial use.
 - `WhatsappProvider` uses `mock-whatsapp`; no Twilio credentials required.
 
 ## Next Tasks
 
-- convert `NewsProvider` to GDELT DOC article ingestion
 - add a WhatsApp webhook controller endpoint for inbound operator messages
 - add provider health checks and retry/error mapping
 - choose a satellite/map provider for actual NDVI and water-body distance

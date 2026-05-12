@@ -44,7 +44,14 @@ export class NotificationsService {
           })),
         })
       ).forecasts;
-    const newsSignals = payload.newsSignals ?? this.newsProvider.fetchSignals().signals;
+    const newsSignals =
+      payload.newsSignals ??
+      (
+        await this.newsProvider.fetchSignals({
+          crops: [...new Set(fakeFarms.map((farm) => farm.currentCrop))],
+          regions: [...new Set(fakeFarms.map((farm) => farm.region))],
+        })
+      ).signals;
 
     const signals = reasonAboutAlerts(fakeFarms, weatherForecasts, newsSignals);
     signals.forEach((signal) => signalStore.set(signal.id, signal));

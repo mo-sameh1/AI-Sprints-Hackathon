@@ -227,6 +227,7 @@ export interface NewsSignal {
   affectedCrops: string[];
   affectedRegions: string[];
   publishedAt: string;
+  sourceUrl?: string;
 }
 
 export interface GeospatialData {

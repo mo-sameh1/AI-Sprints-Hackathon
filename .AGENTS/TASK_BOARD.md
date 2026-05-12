@@ -7,7 +7,12 @@
 - [ ] migrate NestJS in-memory maps to Prisma repositories
 - [ ] wire `ai-worker` to real OpenAI/HuggingFace APIs
 - [ ] add JWT Auth for admin, operator, and investor roles
-- [ ] integrate weather/news API for real alerts
+- [ ] replace weather/news mock providers with real alert APIs
+- [ ] add WhatsApp webhook route for operator message intake
+
+## Completed (Phase 2: Persistence & Integrations)
+
+- [x] define integration provider contracts and local stubs for weather, news, geospatial, and WhatsApp
 
 ## Completed (Phase 1: In-Memory Demo)
 

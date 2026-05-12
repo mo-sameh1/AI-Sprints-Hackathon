@@ -14,14 +14,15 @@ Confidence: `high on structure and demo completeness, ready for presentation or 
 - AI worker shell (Deterministic AI pipelines implemented)
 - shared type package (Fully populated domain contracts)
 - In-memory data stores for Farms, Investors, Matches, Deals, Reports, Notifications, and Admin Review items.
+- Integration provider contracts for weather, news, geospatial, and WhatsApp with local deterministic stubs.
 
 ## What Is Not Done Yet
 
 - actual Postgres/Redis database schema or migrations (currently in-memory)
 - real auth (currently mock headers)
-- real WhatsApp integration
+- real WhatsApp integration or inbound webhook controller
 - real AI orchestration (currently deterministic pipelines simulating AI)
-- real weather, news, or geospatial providers
+- real weather, news, or geospatial providers (currently provider-level stubs)
 
 ## Priority Order (Completed for MVP)
 
@@ -46,3 +47,4 @@ The next agent should focus on transitioning from the in-memory mock backend to 
 1. Implement Postgres with Prisma.
 2. Hook up real OpenAI/HuggingFace API calls in the `ai-worker`.
 3. Add actual JWT Auth.
+4. Replace integration provider stubs with vendor-backed HTTP clients after API keys and provider choices are finalized.

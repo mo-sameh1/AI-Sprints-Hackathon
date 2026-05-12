@@ -1,29 +1,30 @@
 import { Injectable } from '@nestjs/common';
 import { DealRecommendation, FarmProfile, InvestorPreferences } from '@ai-sprints/shared-types';
 import { recommendDealStructure } from '@ai-sprints/ai-worker';
-
-const dealStore = new Map<string, DealRecommendation>();
+import { DealsRepository } from '../database/repositories/platform.repositories';
 
 @Injectable()
 export class DealsService {
+  constructor(private readonly dealsRepository: DealsRepository) {}
+
   recommendStructure(
     farm: FarmProfile,
     preferences: InvestorPreferences
-  ): DealRecommendation {
+  ): Promise<DealRecommendation> {
     const deal = recommendDealStructure(farm, preferences);
-    dealStore.set(deal.id, deal);
-    return deal;
+    return this.dealsRepository.save(deal);
   }
 
-  getDealById(id: string): DealRecommendation | { error: string } {
-    return dealStore.get(id) ?? { error: `Deal ${id} not found` };
+  async getDealById(id: string): Promise<DealRecommendation | { error: string }> {
+    const deal = await this.dealsRepository.findById(id);
+    return deal ?? { error: `Deal ${id} not found` };
   }
 
-  getDealsForInvestor(investorId: string): DealRecommendation[] {
-    return Array.from(dealStore.values()).filter(d => d.investorId === investorId);
+  getDealsForInvestor(investorId: string): Promise<DealRecommendation[]> {
+    return this.dealsRepository.findForInvestor(investorId);
   }
 
-  getDealsForFarm(farmId: string): DealRecommendation[] {
-    return Array.from(dealStore.values()).filter(d => d.farmId === farmId);
+  getDealsForFarm(farmId: string): Promise<DealRecommendation[]> {
+    return this.dealsRepository.findForFarm(farmId);
   }
 }

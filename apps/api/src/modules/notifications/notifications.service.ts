@@ -6,16 +6,18 @@ import {
   WeatherForecast,
 } from '@ai-sprints/shared-types';
 import { reasonAboutAlerts } from '@ai-sprints/ai-worker';
+import { FarmsService } from '../farms/farms.service';
 import { NewsProvider } from '../integrations/news/news.provider';
 import { WeatherProvider } from '../integrations/weather/weather.provider';
-
-const signalStore = new Map<string, NotificationSignal>();
+import { NotificationsRepository } from '../database/repositories/platform.repositories';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     private readonly weatherProvider: WeatherProvider,
-    private readonly newsProvider: NewsProvider
+    private readonly newsProvider: NewsProvider,
+    private readonly farmsService: FarmsService,
+    private readonly notificationsRepository: NotificationsRepository
   ) {
     void this.evaluateSignals().catch((error) => {
       console.warn('Initial notification signal evaluation failed', error);
@@ -29,13 +31,13 @@ export class NotificationsService {
       farmIds?: string[];
     } = {}
   ): Promise<NotificationSignal[]> {
-    const fakeFarms = this.getDemoFarms(payload.farmIds);
+    const farms = await this.getFarms(payload.farmIds);
     const weatherForecasts =
       payload.weatherForecasts ??
       (
         await this.weatherProvider.fetchForecast({
           farmIds: payload.farmIds,
-          locations: fakeFarms.map((farm) => ({
+          locations: farms.map((farm) => ({
             farmId: farm.id,
             region: farm.region,
             country: farm.country,
@@ -48,111 +50,30 @@ export class NotificationsService {
       payload.newsSignals ??
       (
         await this.newsProvider.fetchSignals({
-          crops: [...new Set(fakeFarms.map((farm) => farm.currentCrop))],
-          regions: [...new Set(fakeFarms.map((farm) => farm.region))],
+          crops: [...new Set(farms.map((farm) => farm.currentCrop))],
+          regions: [...new Set(farms.map((farm) => farm.region))],
         })
       ).signals;
 
-    const signals = reasonAboutAlerts(fakeFarms, weatherForecasts, newsSignals);
-    signals.forEach((signal) => signalStore.set(signal.id, signal));
-    return signals;
+    const signals = reasonAboutAlerts(farms, weatherForecasts, newsSignals);
+    return this.notificationsRepository.saveMany(signals);
   }
 
-  getAllSignals(): NotificationSignal[] {
-    return Array.from(signalStore.values()).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+  getAllSignals(): Promise<NotificationSignal[]> {
+    return this.notificationsRepository.findAll();
   }
 
-  getSignalById(id: string): NotificationSignal | { error: string } {
-    return signalStore.get(id) ?? { error: `Signal ${id} not found` };
+  async getSignalById(id: string): Promise<NotificationSignal | { error: string }> {
+    const signal = await this.notificationsRepository.findById(id);
+    return signal ?? { error: `Signal ${id} not found` };
   }
 
-  getSignalsForFarm(farmId: string): NotificationSignal[] {
-    return Array.from(signalStore.values()).filter((signal) =>
-      signal.affectedFarmIds.includes(farmId)
-    );
+  getSignalsForFarm(farmId: string): Promise<NotificationSignal[]> {
+    return this.notificationsRepository.findForFarm(farmId);
   }
 
-  private getDemoFarms(farmIds?: string[]): FarmProfile[] {
-    const farms: FarmProfile[] = [
-      {
-        id: 'farm-001',
-        operatorId: 'operator-001',
-        name: 'Delta Wheat Cooperative',
-        country: 'Egypt',
-        region: 'Delta',
-        governorate: 'Dakahlia',
-        latitude: 31.0409,
-        longitude: 31.3785,
-        areaHectares: 42,
-        soilType: 'clay',
-        waterSource: 'irrigation_canal',
-        currentCrop: 'wheat',
-        plannedCrops: ['wheat', 'maize'],
-        requestedCapitalUsd: 120000,
-        projectedRoiPercent: 18,
-        cropCycleDays: 150,
-        yieldHistory: [],
-        certifications: [],
-        documentUrls: [],
-        imageUrls: [],
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: 'farm-002',
-        operatorId: 'operator-002',
-        name: 'Upper Egypt Citrus Farm',
-        country: 'Egypt',
-        region: 'Upper Egypt',
-        governorate: 'Luxor',
-        latitude: 25.6872,
-        longitude: 32.6396,
-        areaHectares: 24,
-        soilType: 'sandy',
-        waterSource: 'nile',
-        currentCrop: 'citrus',
-        plannedCrops: ['citrus'],
-        requestedCapitalUsd: 90000,
-        projectedRoiPercent: 16,
-        cropCycleDays: 210,
-        yieldHistory: [],
-        certifications: [],
-        documentUrls: [],
-        imageUrls: [],
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: 'farm-003',
-        operatorId: 'operator-003',
-        name: 'Fayoum Tomato Cluster',
-        country: 'Egypt',
-        region: 'Fayoum',
-        governorate: 'Fayoum',
-        latitude: 29.3084,
-        longitude: 30.8428,
-        areaHectares: 18,
-        soilType: 'loamy',
-        waterSource: 'mixed',
-        currentCrop: 'tomato',
-        plannedCrops: ['tomato', 'potato'],
-        requestedCapitalUsd: 65000,
-        projectedRoiPercent: 22,
-        cropCycleDays: 105,
-        yieldHistory: [],
-        certifications: [],
-        documentUrls: [],
-        imageUrls: [],
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ];
-
+  private async getFarms(farmIds?: string[]): Promise<FarmProfile[]> {
+    const farms = await this.farmsService.getAllFarms();
     if (!farmIds || farmIds.length === 0) {
       return farms;
     }

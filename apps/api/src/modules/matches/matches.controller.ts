@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { MatchesService } from './matches.service';
 import { FarmsService } from '../farms/farms.service';
 import { InvestorsService } from '../investors/investors.service';
-import { FarmProfile, InvestorProfile } from '@ai-sprints/shared-types';
+import { InvestorProfile } from '@ai-sprints/shared-types';
 
 @Controller('matches')
 export class MatchesController {
@@ -13,10 +13,10 @@ export class MatchesController {
   ) {}
 
   @Post('rank')
-  rankMatches(@Body() payload: Record<string, unknown>) {
+  async rankMatches(@Body() payload: Record<string, unknown>) {
     const investorId = String(payload['investorId'] ?? 'inv-001');
-    const investorResult = this.investorsService.getInvestorById(investorId);
-    const farms = this.farmsService.getActiveFarms();
+    const investorResult = await this.investorsService.getInvestorById(investorId);
+    const farms = await this.farmsService.getActiveFarms();
 
     if ('error' in investorResult) {
       // fallback: use payload preferences directly
@@ -35,7 +35,7 @@ export class MatchesController {
     }
 
     const investor = investorResult as InvestorProfile;
-    const farmList = this.farmsService.getAllFarms();
+    const farmList = await this.farmsService.getAllFarms();
     return this.matchesService.rankMatches(investorId, investor.preferences, farmList);
   }
 

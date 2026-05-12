@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { OperatorReport } from '@ai-sprints/shared-types';
-
-const reportStore = new Map<string, OperatorReport>();
+import { ReportsRepository } from '../database/repositories/platform.repositories';
 
 @Injectable()
 export class ReportsService {
-  submitReport(payload: Record<string, unknown>): OperatorReport {
+  constructor(private readonly reportsRepository: ReportsRepository) {}
+
+  submitReport(payload: Record<string, unknown>): Promise<OperatorReport> {
     const id = `report-${Date.now()}`;
     const report: OperatorReport = {
       id,
@@ -17,15 +18,14 @@ export class ReportsService {
       notes: String(payload['notes'] ?? ''),
       submittedAt: new Date().toISOString(),
     };
-    reportStore.set(id, report);
-    return report;
+    return this.reportsRepository.save(report);
   }
 
-  getReportsForFarm(farmId: string): OperatorReport[] {
-    return Array.from(reportStore.values()).filter(r => r.farmId === farmId);
+  getReportsForFarm(farmId: string): Promise<OperatorReport[]> {
+    return this.reportsRepository.findForFarm(farmId);
   }
 
-  getReportsForOperator(operatorId: string): OperatorReport[] {
-    return Array.from(reportStore.values()).filter(r => r.operatorId === operatorId);
+  getReportsForOperator(operatorId: string): Promise<OperatorReport[]> {
+    return this.reportsRepository.findForOperator(operatorId);
   }
 }

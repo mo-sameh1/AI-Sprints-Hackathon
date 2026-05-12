@@ -76,3 +76,13 @@ Reason:
 - easier agent handoff
 - future vendor swap is simpler
 
+## D-008 Prisma Persistence
+
+Use Prisma Client with Postgres for the API persistence layer.
+
+Reason:
+
+- keeps TypeScript data access explicit
+- matches the planned transactional store
+- lets demo seed data move out of service-local maps without changing API contracts
+

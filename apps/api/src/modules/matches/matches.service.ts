@@ -1,27 +1,28 @@
 import { Injectable } from '@nestjs/common';
-import { MatchResult, InvestorPreferences } from '@ai-sprints/shared-types';
+import { FarmProfile, MatchResult, InvestorPreferences } from '@ai-sprints/shared-types';
 import { rankInvestmentMatches } from '@ai-sprints/ai-worker';
-
-// ── In-memory cache of match results ─────────────────────────────────────────
-const matchCache = new Map<string, MatchResult[]>();
+import { MatchesRepository } from '../database/repositories/platform.repositories';
 
 @Injectable()
 export class MatchesService {
-  rankMatches(
+  constructor(private readonly matchesRepository: MatchesRepository) {}
+
+  async rankMatches(
     investorId: string,
     preferences: InvestorPreferences,
-    farms: ReturnType<typeof Array.prototype.map>
-  ): { investorId: string; matches: MatchResult[]; rankedAt: string } {
-    const matches = rankInvestmentMatches(investorId, preferences, farms as never);
-    matchCache.set(investorId, matches);
+    farms: FarmProfile[]
+  ): Promise<{ investorId: string; matches: MatchResult[]; rankedAt: string }> {
+    const matches = rankInvestmentMatches(investorId, preferences, farms);
+    const savedMatches = await this.matchesRepository.replaceForInvestor(investorId, matches);
     return {
       investorId,
-      matches,
+      matches: savedMatches,
       rankedAt: new Date().toISOString(),
     };
   }
 
-  getMatchesForInvestor(investorId: string): MatchResult[] | { error: string } {
-    return matchCache.get(investorId) ?? { error: 'No matches found. Submit preferences first.' };
+  async getMatchesForInvestor(investorId: string): Promise<MatchResult[] | { error: string }> {
+    const matches = await this.matchesRepository.findForInvestor(investorId);
+    return matches.length > 0 ? matches : { error: 'No matches found. Submit preferences first.' };
   }
 }

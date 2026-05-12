@@ -1,32 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InvestorProfile, InvestorPreferences } from '@ai-sprints/shared-types';
-
-// ── In-memory store ───────────────────────────────────────────────────────────
-const investorStore = new Map<string, InvestorProfile>();
-
-// Seed demo investor
-investorStore.set('inv-001', {
-  id: 'inv-001',
-  userId: 'user-001',
-  name: 'Ahmed Mansour',
-  preferences: {
-    investorId: 'inv-001',
-    riskTolerance: 'medium',
-    investmentHorizonMonths: 12,
-    capitalBudgetUsd: 100000,
-    liquidityPreference: 'medium',
-    preferredCrops: ['wheat', 'citrus', 'tomato'],
-    preferredRegions: ['Delta', 'Fayoum'],
-    expectedRoiPercent: 15,
-    sustainabilityFocus: true,
-  },
-  portfolio: [],
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-});
+import { InvestorsRepository } from '../database/repositories/platform.repositories';
 
 @Injectable()
 export class InvestorsService {
+  constructor(private readonly investorsRepository: InvestorsRepository) {}
+
   getPreferenceTemplate() {
     return {
       persona: 'investor',
@@ -43,9 +22,9 @@ export class InvestorsService {
     };
   }
 
-  savePreferences(payload: Record<string, unknown>): { status: string; investorId: string; profile: InvestorProfile } {
+  async savePreferences(payload: Record<string, unknown>): Promise<{ status: string; investorId: string; profile: InvestorProfile }> {
     const investorId = String(payload['investorId'] ?? `inv-${Date.now()}`);
-    const existing = investorStore.get(investorId);
+    const existing = await this.investorsRepository.findById(investorId);
 
     const prefs: InvestorPreferences = {
       investorId,
@@ -69,26 +48,21 @@ export class InvestorsService {
       updatedAt: new Date().toISOString(),
     };
 
-    investorStore.set(investorId, profile);
-    return { status: 'saved', investorId, profile };
+    const saved = await this.investorsRepository.save(profile);
+    return { status: 'saved', investorId, profile: saved };
   }
 
-  getInvestorById(id: string): InvestorProfile | { error: string } {
-    return investorStore.get(id) ?? { error: `Investor ${id} not found` };
+  async getInvestorById(id: string): Promise<InvestorProfile | { error: string }> {
+    const investor = await this.investorsRepository.findById(id);
+    return investor ?? { error: `Investor ${id} not found` };
   }
 
-  addToPortfolio(investorId: string, farmId: string): InvestorProfile | { error: string } {
-    const investor = investorStore.get(investorId);
-    if (!investor) return { error: `Investor ${investorId} not found` };
-    if (!investor.portfolio.includes(farmId)) {
-      investor.portfolio.push(farmId);
-      investor.updatedAt = new Date().toISOString();
-      investorStore.set(investorId, investor);
-    }
-    return investor;
+  async addToPortfolio(investorId: string, farmId: string): Promise<InvestorProfile | { error: string }> {
+    const investor = await this.investorsRepository.addToPortfolio(investorId, farmId);
+    return investor ?? { error: `Investor ${investorId} not found` };
   }
 
-  getAllInvestors(): InvestorProfile[] {
-    return Array.from(investorStore.values());
+  getAllInvestors(): Promise<InvestorProfile[]> {
+    return this.investorsRepository.findAll();
   }
 }

@@ -9,10 +9,12 @@ import { DealsModule } from './modules/deals/deals.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { DatabaseModule } from './modules/database/database.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 
 @Module({
   imports: [
+    DatabaseModule,
     AuthModule,
     InvestorsModule,
     OperatorsModule,

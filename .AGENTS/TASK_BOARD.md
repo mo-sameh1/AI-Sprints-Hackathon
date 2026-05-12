@@ -2,9 +2,9 @@
 
 ## Ready Now (Phase 2: Persistence & Integrations)
 
-- [ ] initialize Prisma schema based on `shared-types`
+- [x] initialize Prisma schema based on `shared-types`
 - [ ] spin up local Postgres/Redis docker-compose
-- [ ] migrate NestJS in-memory maps to Prisma repositories
+- [x] migrate NestJS in-memory maps to Prisma repositories
 - [ ] wire `ai-worker` to real OpenAI/HuggingFace APIs
 - [ ] add JWT Auth for admin, operator, and investor roles
 - [ ] replace weather/news mock providers with real alert APIs
@@ -12,6 +12,9 @@
 
 ## Completed (Phase 2: Persistence & Integrations)
 
+- [x] add Prisma schema, initial migration, and Prisma client generation scripts for the API
+- [x] add API readiness check backed by a Postgres query
+- [x] replace API in-memory collections with Prisma-backed repositories and seed data
 - [x] define integration provider contracts and local stubs for weather, news, geospatial, and WhatsApp
 - [x] wire Open-Meteo live weather forecast, geocoding, elevation, and soil moisture calls
 - [x] wire GDELT DOC live news article ingestion into alert reasoning

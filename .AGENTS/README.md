@@ -37,3 +37,11 @@ The repo is scaffolded, not production-ready.
 - AI pipelines are stubbed
 - infra notes exist
 
+## Checkpointing and Commits
+
+- You must checkpoint your implementation with git commits, to ensure that you can revert to a working commit in case of failure
+
+## .AGENTS/ Updates
+
+- You must update the .AGENTS/ folder as you go, to keep track of progress, and allow agents to continue working to ensure a fully working product.
+

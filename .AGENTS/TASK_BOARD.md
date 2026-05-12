@@ -1,26 +1,34 @@
 # Task Board
 
-## Ready Now
+## Ready Now (Phase 2: Persistence & Integrations)
 
-- wire backend module DTOs and service contracts
-- define shared domain types more deeply
-- design the investor discovery pages
-- design the operator onboarding flow
-- draft the admin review queue UI
-- define database tables and migration approach
-- choose queue technology
-- choose AI orchestration pattern
+- [ ] initialize Prisma schema based on `shared-types`
+- [ ] spin up local Postgres/Redis docker-compose
+- [ ] migrate NestJS in-memory maps to Prisma repositories
+- [ ] wire `ai-worker` to real OpenAI/HuggingFace APIs
+- [ ] add JWT Auth for admin, operator, and investor roles
+- [ ] integrate weather/news API for real alerts
 
-## Suggested Parallel Split
+## Completed (Phase 1: In-Memory Demo)
 
-- `PLATFORM_AGENT`: backend module wiring and shared contracts
-- `INVESTOR_AGENT`: investor web UX and API expectations
-- `OPERATOR_AGENT`: operator onboarding/reporting UX and farm payloads
-- `ADMIN_AGENT`: risk queue, overrides, and review states
-- `AI_AGENT`: prompts, pipelines, job contracts, evaluation logic
-- `INTEGRATIONS_AGENT`: providers, API mocks, env vars, failure modes
+- [x] wire backend module DTOs and service contracts
+- [x] define shared domain types deeply
+- [x] design the investor discovery pages
+- [x] design the operator onboarding flow
+- [x] draft the admin review queue UI
+- [x] implement in-memory mock backend logic
+- [x] implement deterministic mock AI logic
 
-## Immediate Contract To Stabilize
+## Suggested Parallel Split for Phase 2
+
+- `PLATFORM_AGENT`: Prisma schema, migrations, repository refactoring
+- `INVESTOR_AGENT`: Connect Investor UX to real Auth and handle error states
+- `OPERATOR_AGENT`: Handle real image uploads and document processing for farms
+- `ADMIN_AGENT`: Implement real audit trails and role-based access control
+- `AI_AGENT`: Replace mock logic with LangChain/OpenAI calls, handle rate limits and prompt engineering
+- `INTEGRATIONS_AGENT`: Setup third-party APIs (Weather, News, WhatsApp Twilio)
+
+## Stable Contracts (Source of Truth)
 
 - `InvestorPreferences`
 - `FarmProfile`
@@ -28,4 +36,3 @@
 - `DealRecommendation`
 - `NotificationSignal`
 - `AdminReviewItem`
-

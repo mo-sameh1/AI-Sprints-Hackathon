@@ -2,45 +2,47 @@
 
 ## Overall
 
-Phase: `scaffolded`
+Phase: `functional-in-memory-demo`
 
-Confidence: `high on structure, low on implementation completeness`
+Confidence: `high on structure and demo completeness, ready for presentation or real backend integration`
 
 ## What Exists
 
 - root monorepo config
-- investor, operator, and admin app shells
-- Nest-style API shell
-- AI worker shell
-- shared type package
-- infra placeholders for Postgres and Redis
-- integration provider placeholders
+- investor, operator, and admin app shells (Fully implemented frontends with Next.js running on ports 3003, 3005, and 3004 respectively)
+- NestJS API shell (Fully implemented in-memory API with CORS enabled, running on port 4000)
+- AI worker shell (Deterministic AI pipelines implemented)
+- shared type package (Fully populated domain contracts)
+- In-memory data stores for Farms, Investors, Matches, Deals, Reports, Notifications, and Admin Review items.
 
 ## What Is Not Done Yet
 
-- package installation
-- actual API wiring
-- actual database schema or migrations
-- real auth
+- actual Postgres/Redis database schema or migrations (currently in-memory)
+- real auth (currently mock headers)
 - real WhatsApp integration
-- real AI orchestration
+- real AI orchestration (currently deterministic pipelines simulating AI)
 - real weather, news, or geospatial providers
-- frontend routing, state, or design system
 
-## Priority Order
+## Priority Order (Completed for MVP)
 
-1. investor discovery and matching flow
-2. deal structure recommendation flow
-3. operator onboarding and farm profile ingestion
-4. alerting and WhatsApp delivery
-5. admin review queue
+1. ~~investor discovery and matching flow~~ (Done)
+2. ~~deal structure recommendation flow~~ (Done)
+3. ~~operator onboarding and farm profile ingestion~~ (Done)
+4. ~~alerting and WhatsApp delivery~~ (Done)
+5. ~~admin review queue~~ (Done)
 
-## Definition Of A Good First Demo
+## Definition Of A Good First Demo (Completed)
 
-- operator submits a farm profile
-- backend stores a structured record
-- investor submits preferences
-- system returns ranked farm matches
-- system returns a suggested deal structure
-- admin can view the recommendation and any flags
+- ~~operator submits a farm profile~~
+- ~~backend stores a structured record~~
+- ~~investor submits preferences~~
+- ~~system returns ranked farm matches~~
+- ~~system returns a suggested deal structure~~
+- ~~admin can view the recommendation and any flags~~
 
+## Next Phase
+
+The next agent should focus on transitioning from the in-memory mock backend to a real persistent infrastructure:
+1. Implement Postgres with Prisma.
+2. Hook up real OpenAI/HuggingFace API calls in the `ai-worker`.
+3. Add actual JWT Auth.

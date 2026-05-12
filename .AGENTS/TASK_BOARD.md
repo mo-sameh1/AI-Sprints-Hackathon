@@ -15,6 +15,7 @@
 - [x] define integration provider contracts and local stubs for weather, news, geospatial, and WhatsApp
 - [x] wire Open-Meteo live weather forecast, geocoding, elevation, and soil moisture calls
 - [x] wire GDELT DOC live news article ingestion into alert reasoning
+- [x] wire Twilio WhatsApp outbound client and inbound webhook parsing/signature validation
 
 ## Completed (Phase 1: In-Memory Demo)
 

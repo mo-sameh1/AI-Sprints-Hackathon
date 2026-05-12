@@ -17,6 +17,7 @@ Confidence: `high on structure and demo completeness, ready for presentation or 
 - Integration provider contracts for weather, news, geospatial, and WhatsApp.
 - Open-Meteo-backed weather forecasts, geocoding, elevation, and soil moisture are wired in the API.
 - GDELT-backed news ingestion is wired into notification alert reasoning with source URLs.
+- Twilio WhatsApp outbound provider and inbound webhook endpoint are wired; real sends require Twilio env vars.
 
 ## What Is Not Done Yet
 
@@ -24,7 +25,7 @@ Confidence: `high on structure and demo completeness, ready for presentation or 
 - real auth (currently mock headers)
 - real WhatsApp integration or inbound webhook controller
 - real AI orchestration (currently deterministic pipelines simulating AI)
-- real WhatsApp credentials/webhook controller
+- configured Twilio credentials and public webhook URL for real WhatsApp runtime
 - real satellite NDVI or map-based water proximity provider
 
 ## Priority Order (Completed for MVP)

@@ -6,7 +6,7 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
-  getAllSignals() {
+  async getAllSignals() {
     return this.notificationsService.getAllSignals();
   }
 
@@ -21,7 +21,7 @@ export class NotificationsController {
   }
 
   @Post('evaluate')
-  evaluateSignals(@Body() payload: Record<string, unknown>) {
+  async evaluateSignals(@Body() payload: Record<string, unknown>) {
     return this.notificationsService.evaluateSignals(payload as never);
   }
 }

@@ -31,20 +31,22 @@ Date: 2026-05-12
 
 - Provider abstractions live under `apps/api/src/modules/integrations/**`.
 - `IntegrationsModule` exports weather, news, geospatial, and WhatsApp providers for Nest modules.
-- Weather and news providers return deterministic mock responses used by `NotificationsService`.
-- Geospatial enrichment returns deterministic mock NDVI, water, flood, and drought fields from farm location context.
+- Weather provider uses Open-Meteo forecast and geocoding APIs with no local API key required for non-commercial use.
+- Geospatial enrichment uses Open-Meteo elevation and soil moisture APIs.
+- Geospatial NDVI and nearest-water-body fields are still derived heuristics until a satellite/map provider is selected.
+- News provider still needs conversion from local stub to real article ingestion.
 - WhatsApp provider defines send and inbound webhook parsing contracts, but no controller route is wired yet.
 
 ## Local Development Stubs
 
-- `WeatherProvider` uses `mock-weather`; no API key required.
+- `WeatherProvider` uses Open-Meteo forecast/geocoding; no API key required for non-commercial use.
 - `NewsProvider` uses `mock-news`; no API key required.
-- `GeospatialProvider` uses `mock-geospatial`; no API key required.
+- `GeospatialProvider` uses Open-Meteo elevation/soil moisture; no API key required for non-commercial use.
 - `WhatsappProvider` uses `mock-whatsapp`; no Twilio credentials required.
 
 ## Next Tasks
 
-- add environment variable names for real providers once vendors are selected
+- convert `NewsProvider` to GDELT DOC article ingestion
 - add a WhatsApp webhook controller endpoint for inbound operator messages
 - add provider health checks and retry/error mapping
-- replace deterministic mock data with HTTP clients behind the same provider contracts
+- choose a satellite/map provider for actual NDVI and water-body distance

@@ -13,6 +13,7 @@
 ## Completed (Phase 2: Persistence & Integrations)
 
 - [x] define integration provider contracts and local stubs for weather, news, geospatial, and WhatsApp
+- [x] wire Open-Meteo live weather forecast, geocoding, elevation, and soil moisture calls
 
 ## Completed (Phase 1: In-Memory Demo)
 

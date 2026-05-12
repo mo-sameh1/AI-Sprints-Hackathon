@@ -17,20 +17,33 @@ export class NotificationsService {
     private readonly weatherProvider: WeatherProvider,
     private readonly newsProvider: NewsProvider
   ) {
-    this.evaluateSignals();
+    void this.evaluateSignals().catch((error) => {
+      console.warn('Initial notification signal evaluation failed', error);
+    });
   }
 
-  evaluateSignals(
+  async evaluateSignals(
     payload: {
       weatherForecasts?: WeatherForecast[];
       newsSignals?: NewsSignal[];
       farmIds?: string[];
     } = {}
-  ): NotificationSignal[] {
+  ): Promise<NotificationSignal[]> {
     const fakeFarms = this.getDemoFarms(payload.farmIds);
     const weatherForecasts =
       payload.weatherForecasts ??
-      this.weatherProvider.fetchForecast({ farmIds: payload.farmIds }).forecasts;
+      (
+        await this.weatherProvider.fetchForecast({
+          farmIds: payload.farmIds,
+          locations: fakeFarms.map((farm) => ({
+            farmId: farm.id,
+            region: farm.region,
+            country: farm.country,
+            latitude: farm.latitude,
+            longitude: farm.longitude,
+          })),
+        })
+      ).forecasts;
     const newsSignals = payload.newsSignals ?? this.newsProvider.fetchSignals().signals;
 
     const signals = reasonAboutAlerts(fakeFarms, weatherForecasts, newsSignals);
@@ -63,6 +76,8 @@ export class NotificationsService {
         country: 'Egypt',
         region: 'Delta',
         governorate: 'Dakahlia',
+        latitude: 31.0409,
+        longitude: 31.3785,
         areaHectares: 42,
         soilType: 'clay',
         waterSource: 'irrigation_canal',
@@ -86,6 +101,8 @@ export class NotificationsService {
         country: 'Egypt',
         region: 'Upper Egypt',
         governorate: 'Luxor',
+        latitude: 25.6872,
+        longitude: 32.6396,
         areaHectares: 24,
         soilType: 'sandy',
         waterSource: 'nile',
@@ -109,6 +126,8 @@ export class NotificationsService {
         country: 'Egypt',
         region: 'Fayoum',
         governorate: 'Fayoum',
+        latitude: 29.3084,
+        longitude: 30.8428,
         areaHectares: 18,
         soilType: 'loamy',
         waterSource: 'mixed',

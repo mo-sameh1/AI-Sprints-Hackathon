@@ -1,10 +1,19 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist"
+    "target": "ES2020",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": false,
+    "skipLibCheck": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "outDir": "dist",
+    "baseUrl": "../../",
+    "paths": {
+      "@ai-sprints/shared-types": ["packages/shared-types/src"],
+      "@ai-sprints/ai-worker": ["apps/ai-worker/src"],
+      "@ai-sprints/sdk": ["packages/sdk/src"]
+    }
   },
-  "include": [
-    "src/**/*.ts"
-  ]
+  "include": ["src/**/*.ts"]
 }
-

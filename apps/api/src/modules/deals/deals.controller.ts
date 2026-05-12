@@ -1,13 +1,46 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { DealsService } from './deals.service';
+import { FarmsService } from '../farms/farms.service';
+import { InvestorsService } from '../investors/investors.service';
+import { FarmProfile, InvestorProfile } from '@ai-sprints/shared-types';
 
 @Controller('deals')
 export class DealsController {
-  constructor(private readonly dealsService: DealsService) {}
+  constructor(
+    private readonly dealsService: DealsService,
+    private readonly farmsService: FarmsService,
+    private readonly investorsService: InvestorsService,
+  ) {}
 
   @Post('recommend')
   recommendStructure(@Body() payload: Record<string, unknown>) {
-    return this.dealsService.recommendStructure(payload);
+    const farmId = String(payload['farmId'] ?? '');
+    const investorId = String(payload['investorId'] ?? 'inv-001');
+
+    const farmResult = this.farmsService.getFarmById(farmId);
+    const investorResult = this.investorsService.getInvestorById(investorId);
+
+    if ('error' in farmResult) return farmResult;
+    if ('error' in investorResult) return investorResult;
+
+    return this.dealsService.recommendStructure(
+      farmResult as FarmProfile,
+      (investorResult as InvestorProfile).preferences
+    );
+  }
+
+  @Get(':id')
+  getDeal(@Param('id') id: string) {
+    return this.dealsService.getDealById(id);
+  }
+
+  @Get('investor/:investorId')
+  getDealsForInvestor(@Param('investorId') investorId: string) {
+    return this.dealsService.getDealsForInvestor(investorId);
+  }
+
+  @Get('farm/:farmId')
+  getDealsForFarm(@Param('farmId') farmId: string) {
+    return this.dealsService.getDealsForFarm(farmId);
   }
 }
-

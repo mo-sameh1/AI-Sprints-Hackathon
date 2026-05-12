@@ -1,5 +1,6 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Headers } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { UserRole } from '@ai-sprints/shared-types';
 
 @Controller('auth')
 export class AuthController {
@@ -9,5 +10,14 @@ export class AuthController {
   health() {
     return this.authService.health();
   }
-}
 
+  @Get('whoami')
+  whoAmI(@Headers('x-role') role: UserRole) {
+    return this.authService.whoAmI(role ?? 'investor');
+  }
+
+  @Get('roles')
+  listRoles() {
+    return this.authService.listRoles();
+  }
+}

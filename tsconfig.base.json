@@ -10,6 +10,9 @@
       "@ai-sprints/shared-types": [
         "packages/shared-types/src"
       ],
+      "@ai-sprints/ai-worker": [
+        "apps/ai-worker/src"
+      ],
       "@ai-sprints/sdk": [
         "packages/sdk/src"
       ],

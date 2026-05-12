@@ -46,6 +46,45 @@ export interface InvestorsRepositoryContract {
   addToPortfolio(investorId: string, farmId: string): Promise<InvestorProfile | null>;
 }
 
+export interface OperatorsRepositoryContract {
+  findAll(): Promise<OperatorProfile[]>;
+  findById(id: string): Promise<OperatorProfile | null>;
+  save(operator: OperatorProfile): Promise<OperatorProfile>;
+}
+
+export interface MatchesRepositoryContract {
+  replaceForInvestor(investorId: string, matches: MatchResult[]): Promise<MatchResult[]>;
+  findForInvestor(investorId: string): Promise<MatchResult[]>;
+}
+
+export interface DealsRepositoryContract {
+  save(deal: DealRecommendation): Promise<DealRecommendation>;
+  findById(id: string): Promise<DealRecommendation | null>;
+  findForInvestor(investorId: string): Promise<DealRecommendation[]>;
+  findForFarm(farmId: string): Promise<DealRecommendation[]>;
+}
+
+export interface NotificationsRepositoryContract {
+  saveMany(signals: NotificationSignal[]): Promise<NotificationSignal[]>;
+  findAll(): Promise<NotificationSignal[]>;
+  findById(id: string): Promise<NotificationSignal | null>;
+  findForFarm(farmId: string): Promise<NotificationSignal[]>;
+}
+
+export interface ReportsRepositoryContract {
+  save(report: OperatorReport): Promise<OperatorReport>;
+  findForFarm(farmId: string): Promise<OperatorReport[]>;
+  findForOperator(operatorId: string): Promise<OperatorReport[]>;
+}
+
+export interface AdminRepositoryContract {
+  findReviewQueue(status?: AdminReviewItem['status']): Promise<AdminReviewItem[]>;
+  findReviewItem(id: string): Promise<AdminReviewItem | null>;
+  saveReviewItem(item: AdminReviewItem): Promise<AdminReviewItem>;
+  saveAuditLog(entry: AuditLogEntry): Promise<AuditLogEntry>;
+  findAuditLog(): Promise<AuditLogEntry[]>;
+}
+
 @Injectable()
 export class FarmsRepository implements FarmsRepositoryContract {
   constructor(private readonly prisma: PrismaService) {}
@@ -130,7 +169,7 @@ export class InvestorsRepository implements InvestorsRepositoryContract {
 }
 
 @Injectable()
-export class OperatorsRepository {
+export class OperatorsRepository implements OperatorsRepositoryContract {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(): Promise<OperatorProfile[]> {
@@ -155,7 +194,7 @@ export class OperatorsRepository {
 }
 
 @Injectable()
-export class MatchesRepository {
+export class MatchesRepository implements MatchesRepositoryContract {
   constructor(private readonly prisma: PrismaService) {}
 
   async replaceForInvestor(investorId: string, matches: MatchResult[]): Promise<MatchResult[]> {
@@ -178,7 +217,7 @@ export class MatchesRepository {
 }
 
 @Injectable()
-export class DealsRepository {
+export class DealsRepository implements DealsRepositoryContract {
   constructor(private readonly prisma: PrismaService) {}
 
   async save(deal: DealRecommendation): Promise<DealRecommendation> {
@@ -214,7 +253,7 @@ export class DealsRepository {
 }
 
 @Injectable()
-export class NotificationsRepository {
+export class NotificationsRepository implements NotificationsRepositoryContract {
   constructor(private readonly prisma: PrismaService) {}
 
   async saveMany(signals: NotificationSignal[]): Promise<NotificationSignal[]> {
@@ -251,7 +290,7 @@ export class NotificationsRepository {
 }
 
 @Injectable()
-export class ReportsRepository {
+export class ReportsRepository implements ReportsRepositoryContract {
   constructor(private readonly prisma: PrismaService) {}
 
   async save(report: OperatorReport): Promise<OperatorReport> {
@@ -282,7 +321,7 @@ export class ReportsRepository {
 }
 
 @Injectable()
-export class AdminRepository {
+export class AdminRepository implements AdminRepositoryContract {
   constructor(private readonly prisma: PrismaService) {}
 
   async findReviewQueue(status?: AdminReviewItem['status']): Promise<AdminReviewItem[]> {

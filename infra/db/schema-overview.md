@@ -18,9 +18,14 @@ Core models implemented:
 - `AdminReviewItem`
 - `AuditLogEntry`
 
-Follow-up infrastructure still needed:
+Local persistence commands:
 
-- local `docker-compose` for Postgres and Redis
+- `npm run infra:up`
+- `npm run db:migrate`
+- `npm run infra:down`
+
+Follow-up schema work still needed:
+
 - relation constraints once auth/user lifecycle is finalized
 - document/media storage tables after upload provider selection
 

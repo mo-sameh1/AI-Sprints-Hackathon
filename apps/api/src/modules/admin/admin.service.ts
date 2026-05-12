@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AdminReviewItem, AuditLogEntry, ReviewStatus, ReviewItemType, RiskFlag } from '@ai-sprints/shared-types';
+import { notFoundError } from '../../common/http.types';
 import { AdminRepository } from '../database/repositories/platform.repositories';
 
 @Injectable()
@@ -10,9 +11,9 @@ export class AdminService {
     return this.adminRepository.findReviewQueue(status);
   }
 
-  async getReviewItem(id: string): Promise<AdminReviewItem | { error: string }> {
+  async getReviewItem(id: string) {
     const item = await this.adminRepository.findReviewItem(id);
-    return item ?? { error: `Review item ${id} not found` };
+    return item ?? notFoundError('Review item', id);
   }
 
   async createReviewItem(
@@ -39,9 +40,9 @@ export class AdminService {
     action: 'approve' | 'reject' | 'override' | 'escalate',
     adminId: string,
     note?: string
-  ): Promise<AdminReviewItem | { error: string }> {
+  ) {
     const item = await this.adminRepository.findReviewItem(id);
-    if (!item) return { error: `Review item ${id} not found` };
+    if (!item) return notFoundError('Review item', id);
 
     const statusMap: Record<string, ReviewStatus> = {
       approve: 'approved',

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { FarmProfile } from '@ai-sprints/shared-types';
 import { buildFarmProfile } from '@ai-sprints/ai-worker';
+import { notFoundError } from '../../common/http.types';
 import { FarmsRepository } from '../database/repositories/platform.repositories';
 
 @Injectable()
@@ -11,9 +12,9 @@ export class FarmsService {
     return this.farmsRepository.findAll();
   }
 
-  async getFarmById(id: string): Promise<FarmProfile | { error: string }> {
+  async getFarmById(id: string) {
     const farm = await this.farmsRepository.findById(id);
-    if (!farm) return { error: `Farm ${id} not found` };
+    if (!farm) return notFoundError('Farm', id);
     return farm;
   }
 
@@ -26,9 +27,9 @@ export class FarmsService {
     return this.farmsRepository.save(farm);
   }
 
-  async updateFarmStatus(id: string, status: FarmProfile['status']): Promise<FarmProfile | { error: string }> {
+  async updateFarmStatus(id: string, status: FarmProfile['status']) {
     const farm = await this.farmsRepository.updateStatus(id, status);
-    if (!farm) return { error: `Farm ${id} not found` };
+    if (!farm) return notFoundError('Farm', id);
     return farm;
   }
 }

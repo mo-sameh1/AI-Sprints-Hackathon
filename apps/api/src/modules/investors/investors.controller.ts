@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { InvestorsService } from './investors.service';
+import { AddToPortfolioDto, SaveInvestorPreferencesDto } from './dto/investor-preferences.dto';
 
 @Controller('investors')
 export class InvestorsController {
@@ -21,12 +22,12 @@ export class InvestorsController {
   }
 
   @Post('preferences')
-  savePreferences(@Body() payload: Record<string, unknown>) {
+  savePreferences(@Body() payload: SaveInvestorPreferencesDto) {
     return this.investorsService.savePreferences(payload);
   }
 
   @Post(':id/portfolio')
-  addToPortfolio(@Param('id') id: string, @Body() body: { farmId: string }) {
+  addToPortfolio(@Param('id') id: string, @Body() body: AddToPortfolioDto) {
     return this.investorsService.addToPortfolio(id, body.farmId);
   }
 }

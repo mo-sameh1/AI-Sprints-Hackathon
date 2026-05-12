@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { FarmProfile, MatchResult, InvestorPreferences } from '@ai-sprints/shared-types';
 import { rankInvestmentMatches } from '@ai-sprints/ai-worker';
+import { apiError } from '../../common/http.types';
 import { MatchesRepository } from '../database/repositories/platform.repositories';
 
 @Injectable()
@@ -21,8 +22,10 @@ export class MatchesService {
     };
   }
 
-  async getMatchesForInvestor(investorId: string): Promise<MatchResult[] | { error: string }> {
+  async getMatchesForInvestor(investorId: string) {
     const matches = await this.matchesRepository.findForInvestor(investorId);
-    return matches.length > 0 ? matches : { error: 'No matches found. Submit preferences first.' };
+    return matches.length > 0
+      ? matches
+      : apiError('NOT_FOUND', 'No matches found. Submit preferences first.', 404, { investorId });
   }
 }

@@ -3,6 +3,7 @@ import { MatchesService } from './matches.service';
 import { FarmsService } from '../farms/farms.service';
 import { InvestorsService } from '../investors/investors.service';
 import { InvestorProfile } from '@ai-sprints/shared-types';
+import { RankMatchesDto, toRankingPreferences } from './dto/rank-matches.dto';
 
 @Controller('matches')
 export class MatchesController {
@@ -13,24 +14,13 @@ export class MatchesController {
   ) {}
 
   @Post('rank')
-  async rankMatches(@Body() payload: Record<string, unknown>) {
+  async rankMatches(@Body() payload: RankMatchesDto) {
     const investorId = String(payload['investorId'] ?? 'inv-001');
     const investorResult = await this.investorsService.getInvestorById(investorId);
     const farms = await this.farmsService.getActiveFarms();
 
     if ('error' in investorResult) {
-      // fallback: use payload preferences directly
-      const prefs = {
-        investorId,
-        riskTolerance: (payload['riskTolerance'] as never) ?? 'medium',
-        investmentHorizonMonths: Number(payload['investmentHorizonMonths'] ?? 12),
-        capitalBudgetUsd: Number(payload['capitalBudgetUsd'] ?? 50000),
-        liquidityPreference: (payload['liquidityPreference'] as never) ?? 'medium',
-        preferredCrops: (payload['preferredCrops'] as string[]) ?? [],
-        preferredRegions: (payload['preferredRegions'] as string[]) ?? [],
-        expectedRoiPercent: Number(payload['expectedRoiPercent'] ?? 15),
-        sustainabilityFocus: Boolean(payload['sustainabilityFocus'] ?? false),
-      };
+      const prefs = toRankingPreferences(payload, investorId);
       return this.matchesService.rankMatches(investorId, prefs, farms);
     }
 

@@ -13,6 +13,10 @@
     "dev:operator": "npm run dev -w @ai-sprints/operator-web",
     "dev:admin": "npm run dev -w @ai-sprints/admin-web",
     "dev:worker": "npm run dev -w @ai-sprints/ai-worker",
+    "infra:up": "docker compose -f infra/docker/docker-compose.yml up -d postgres redis",
+    "infra:down": "docker compose -f infra/docker/docker-compose.yml down",
+    "db:generate": "npm run prisma:generate -w @ai-sprints/api",
+    "db:migrate": "npm run prisma:deploy -w @ai-sprints/api",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present"

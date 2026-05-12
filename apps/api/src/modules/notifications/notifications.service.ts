@@ -7,6 +7,7 @@ import {
 } from '@ai-sprints/shared-types';
 import { reasonAboutAlerts } from '@ai-sprints/ai-worker';
 import { FarmsService } from '../farms/farms.service';
+import { notFoundError } from '../../common/http.types';
 import { NewsProvider } from '../integrations/news/news.provider';
 import { WeatherProvider } from '../integrations/weather/weather.provider';
 import { NotificationsRepository } from '../database/repositories/platform.repositories';
@@ -63,9 +64,9 @@ export class NotificationsService {
     return this.notificationsRepository.findAll();
   }
 
-  async getSignalById(id: string): Promise<NotificationSignal | { error: string }> {
+  async getSignalById(id: string) {
     const signal = await this.notificationsRepository.findById(id);
-    return signal ?? { error: `Signal ${id} not found` };
+    return signal ?? notFoundError('Signal', id);
   }
 
   getSignalsForFarm(farmId: string): Promise<NotificationSignal[]> {

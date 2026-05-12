@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { InvestorProfile, InvestorPreferences } from '@ai-sprints/shared-types';
+import { InvestorProfile } from '@ai-sprints/shared-types';
+import { notFoundError, validationError } from '../../common/http.types';
 import { InvestorsRepository } from '../database/repositories/platform.repositories';
+import { SaveInvestorPreferencesDto, toInvestorPreferences } from './dto/investor-preferences.dto';
 
 @Injectable()
 export class InvestorsService {
@@ -22,21 +24,11 @@ export class InvestorsService {
     };
   }
 
-  async savePreferences(payload: Record<string, unknown>): Promise<{ status: string; investorId: string; profile: InvestorProfile }> {
+  async savePreferences(payload: SaveInvestorPreferencesDto): Promise<{ status: string; investorId: string; profile: InvestorProfile }> {
     const investorId = String(payload['investorId'] ?? `inv-${Date.now()}`);
     const existing = await this.investorsRepository.findById(investorId);
 
-    const prefs: InvestorPreferences = {
-      investorId,
-      riskTolerance: (payload['riskTolerance'] as InvestorPreferences['riskTolerance']) ?? 'medium',
-      investmentHorizonMonths: Number(payload['investmentHorizonMonths'] ?? 12),
-      capitalBudgetUsd: Number(payload['capitalBudgetUsd'] ?? 50000),
-      liquidityPreference: (payload['liquidityPreference'] as InvestorPreferences['liquidityPreference']) ?? 'medium',
-      preferredCrops: (payload['preferredCrops'] as string[]) ?? [],
-      preferredRegions: (payload['preferredRegions'] as string[]) ?? [],
-      expectedRoiPercent: Number(payload['expectedRoiPercent'] ?? 15),
-      sustainabilityFocus: Boolean(payload['sustainabilityFocus'] ?? false),
-    };
+    const prefs = toInvestorPreferences(payload, investorId);
 
     const profile: InvestorProfile = {
       id: investorId,
@@ -52,14 +44,15 @@ export class InvestorsService {
     return { status: 'saved', investorId, profile: saved };
   }
 
-  async getInvestorById(id: string): Promise<InvestorProfile | { error: string }> {
+  async getInvestorById(id: string) {
     const investor = await this.investorsRepository.findById(id);
-    return investor ?? { error: `Investor ${id} not found` };
+    return investor ?? notFoundError('Investor', id);
   }
 
-  async addToPortfolio(investorId: string, farmId: string): Promise<InvestorProfile | { error: string }> {
+  async addToPortfolio(investorId: string, farmId: string) {
+    if (!farmId) return validationError('farmId is required', { field: 'farmId' });
     const investor = await this.investorsRepository.addToPortfolio(investorId, farmId);
-    return investor ?? { error: `Investor ${investorId} not found` };
+    return investor ?? notFoundError('Investor', investorId);
   }
 
   getAllInvestors(): Promise<InvestorProfile[]> {

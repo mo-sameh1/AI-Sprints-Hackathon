@@ -3,7 +3,7 @@
 ## Ready Now (Phase 2: Persistence & Integrations)
 
 - [x] initialize Prisma schema based on `shared-types`
-- [ ] spin up local Postgres/Redis docker-compose
+- [x] spin up local Postgres/Redis docker-compose
 - [x] migrate NestJS in-memory maps to Prisma repositories
 - [ ] wire `ai-worker` to real OpenAI/HuggingFace APIs
 - [ ] add JWT Auth for admin, operator, and investor roles
@@ -15,6 +15,10 @@
 - [x] add Prisma schema, initial migration, and Prisma client generation scripts for the API
 - [x] add API readiness check backed by a Postgres query
 - [x] replace API in-memory collections with Prisma-backed repositories and seed data
+- [x] add investor, match, and deal DTO files
+- [x] define structured API error response shape
+- [x] document API routes and local persistence commands
+- [x] add root local infra scripts and Docker service health checks
 - [x] define integration provider contracts and local stubs for weather, news, geospatial, and WhatsApp
 - [x] wire Open-Meteo live weather forecast, geocoding, elevation, and soil moisture calls
 - [x] wire GDELT DOC live news article ingestion into alert reasoning

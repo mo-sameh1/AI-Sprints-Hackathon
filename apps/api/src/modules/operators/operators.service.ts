@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OperatorProfile } from '@ai-sprints/shared-types';
+import { notFoundError } from '../../common/http.types';
 import { OperatorsRepository } from '../database/repositories/platform.repositories';
 
 @Injectable()
@@ -10,9 +11,9 @@ export class OperatorsService {
     return this.operatorsRepository.findAll();
   }
 
-  async getOperatorById(id: string): Promise<OperatorProfile | { error: string }> {
+  async getOperatorById(id: string) {
     const operator = await this.operatorsRepository.findById(id);
-    return operator ?? { error: `Operator ${id} not found` };
+    return operator ?? notFoundError('Operator', id);
   }
 
   registerOperator(payload: Record<string, unknown>): Promise<OperatorProfile> {

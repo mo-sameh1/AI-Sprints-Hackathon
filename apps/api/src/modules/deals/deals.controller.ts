@@ -3,6 +3,7 @@ import { DealsService } from './deals.service';
 import { FarmsService } from '../farms/farms.service';
 import { InvestorsService } from '../investors/investors.service';
 import { FarmProfile, InvestorProfile } from '@ai-sprints/shared-types';
+import { RecommendDealDto } from './dto/recommend-deal.dto';
 
 @Controller('deals')
 export class DealsController {
@@ -13,7 +14,7 @@ export class DealsController {
   ) {}
 
   @Post('recommend')
-  async recommendStructure(@Body() payload: Record<string, unknown>) {
+  async recommendStructure(@Body() payload: RecommendDealDto) {
     const farmId = String(payload['farmId'] ?? '');
     const investorId = String(payload['investorId'] ?? 'inv-001');
 

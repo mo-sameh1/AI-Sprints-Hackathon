@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DealRecommendation, FarmProfile, InvestorPreferences } from '@ai-sprints/shared-types';
 import { recommendDealStructure } from '@ai-sprints/ai-worker';
+import { notFoundError } from '../../common/http.types';
 import { DealsRepository } from '../database/repositories/platform.repositories';
 
 @Injectable()
@@ -15,9 +16,9 @@ export class DealsService {
     return this.dealsRepository.save(deal);
   }
 
-  async getDealById(id: string): Promise<DealRecommendation | { error: string }> {
+  async getDealById(id: string) {
     const deal = await this.dealsRepository.findById(id);
-    return deal ?? { error: `Deal ${id} not found` };
+    return deal ?? notFoundError('Deal', id);
   }
 
   getDealsForInvestor(investorId: string): Promise<DealRecommendation[]> {

@@ -3,7 +3,6 @@ import { AdminReviewItem, AuditLogEntry, ReviewStatus, ReviewItemType, RiskFlag 
 import { PrismaService } from '../prisma/prisma.service';
 
 const auditLog: AuditLogEntry[] = [];
-let itemCounter = 1;
 
 // Seed with some demo review items
 const seedItems: AdminReviewItem[] = [
@@ -62,7 +61,6 @@ export class AdminService implements OnModuleInit {
             updatedAt: new Date(item.updatedAt)
           }
         });
-        itemCounter++;
       }
     }
   }
@@ -100,11 +98,8 @@ export class AdminService implements OnModuleInit {
     aiSummary: string,
     flags: RiskFlag[] = []
   ): Promise<AdminReviewItem> {
-    const id = `review-${String(itemCounter++).padStart(3, '0')}`;
-    
     const item = await this.prisma.adminReviewItem.create({
       data: {
-        id,
         itemType,
         targetId,
         status: 'pending',

@@ -87,6 +87,21 @@ export class FarmsService {
           detail: `$${created.requestedCapitalUsd.toLocaleString()} is above the standard threshold.`,
         });
       }
+      const yieldHistory = created.yieldHistory as unknown[];
+      if (!Array.isArray(yieldHistory) || yieldHistory.length === 0) {
+        flags.push({
+          severity: 'medium',
+          label: 'No Yield History',
+          detail: 'Operator has not submitted historical yield data yet.',
+        });
+      }
+      if (created.imageUrls.length === 0 && created.documentUrls.length === 0) {
+        flags.push({
+          severity: 'low',
+          label: 'No Evidence Uploaded',
+          detail: 'No photos, documents, or voice notes were attached to this submission.',
+        });
+      }
       await this.adminService.createReviewItem(
         'farm_profile',
         created.id,

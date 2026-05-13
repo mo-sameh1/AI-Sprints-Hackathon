@@ -49,6 +49,8 @@ export default function OperatorOnboardPage() {
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [submittedFarm, setSubmittedFarm] = useState<{ id: string; status: string } | null>(null);
   const [uploads, setUploads] = useState<UploadedAsset[]>([]);
   const [farm, setFarm] = useState({
     name: '',
@@ -98,6 +100,8 @@ export default function OperatorOnboardPage() {
 
   const resetForm = () => {
     setSubmitted(false);
+    setSubmitError('');
+    setSubmittedFarm(null);
     setStep(1);
     setUploads([]);
     setFarm({
@@ -117,12 +121,13 @@ export default function OperatorOnboardPage() {
 
   const handleSubmit = async () => {
     setLoading(true);
+    setSubmitError('');
     const readyUploads = uploads.filter(asset => asset.status === 'ready');
     const imageUrls = readyUploads.filter(asset => asset.kind === 'photo').map(asset => asset.url);
     const documentUrls = readyUploads.filter(asset => asset.kind !== 'photo').map(asset => asset.url);
 
     try {
-      await fetch(`${API_BASE}/api/farms`, {
+      const response = await fetch(`${API_BASE}/api/farms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -134,11 +139,20 @@ export default function OperatorOnboardPage() {
           mediaSummary: readyUploads.map(asset => ({ kind: asset.kind, name: asset.name, size: asset.size, type: asset.type, url: asset.url })),
         }),
       });
-    } catch {
-      // The form still shows the local success state if the demo API is offline.
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        const message = data && typeof data === 'object' && 'message' in data ? String(data.message) : `API returned ${response.status}`;
+        throw new Error(message);
+      }
+      console.log('[FarmSubmit] Success! Farm created:', data);
+      setSubmittedFarm(data as { id: string; status: string });
+      setSubmitted(true);
+    } catch (error) {
+      console.error('[FarmSubmit] Failed:', error);
+      setSubmitError(error instanceof Error ? error.message : 'Could not submit farm profile.');
+    } finally {
+      setLoading(false);
     }
-    setSubmitted(true);
-    setLoading(false);
   };
 
   if (submitted) {
@@ -157,6 +171,11 @@ export default function OperatorOnboardPage() {
             <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
               Your farm profile and attached evidence have been submitted for review.
             </p>
+            {submittedFarm && (
+              <div style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '16px' }}>
+                Submission {submittedFarm.id} is now {submittedFarm.status.replace('_', ' ')}.
+              </div>
+            )}
             <div style={{ background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: '8px', padding: '16px', marginBottom: '20px', textAlign: 'left' }}>
               <div style={{ fontWeight: 700, marginBottom: '8px', fontSize: '14px' }}>What happens next:</div>
               {['AI builds your structured farm profile', 'Admin reviews uploaded evidence', 'Farm is listed and matched to investors', 'You get notified via WhatsApp when matched'].map((s, i) => (
@@ -367,6 +386,13 @@ export default function OperatorOnboardPage() {
                 </div>
               ))}
             </div>
+
+            {submitError && (
+              <div className="card" style={{ borderColor: 'rgba(239,68,68,0.28)', background: 'rgba(239,68,68,0.06)' }}>
+                <div style={{ fontWeight: 700, marginBottom: '4px', color: '#fca5a5' }}>Submission failed</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{submitError}</div>
+              </div>
+            )}
           </div>
         )}
 

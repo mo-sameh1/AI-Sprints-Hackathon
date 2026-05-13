@@ -39,7 +39,7 @@ export class FarmsService {
   }
 
   async createFarm(raw: Record<string, unknown>, operatorId: string): Promise<FarmProfile> {
-    const farm = buildFarmProfile(raw, operatorId);
+    const farm = await buildFarmProfile(raw, operatorId);
     
     // Ensure operator exists to satisfy foreign key constraint during demo
     await this.prisma.user.upsert({

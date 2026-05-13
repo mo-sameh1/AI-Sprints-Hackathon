@@ -9,7 +9,8 @@
     "test": "echo test not configured yet"
   },
   "dependencies": {
-    "@ai-sprints/shared-types": "0.1.0"
+    "@ai-sprints/shared-types": "0.1.0",
+    "openai": "^4.67.0"
   },
   "devDependencies": {
     "tsx": "^4.19.2",

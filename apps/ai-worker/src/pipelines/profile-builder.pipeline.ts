@@ -1,13 +1,14 @@
 import { FarmProfile, SoilType, WaterSource } from '@ai-sprints/shared-types';
+import { callLlm } from '../providers/llm.provider';
 
 /**
  * Builds a structured FarmProfile from raw operator submission data.
  * Infers missing fields, generates AI summary, normalizes values.
  */
-export function buildFarmProfile(
+export async function buildFarmProfile(
   raw: Record<string, unknown>,
   operatorId: string
-): FarmProfile {
+): Promise<FarmProfile> {
   const id = `farm-${operatorId}-${Date.now()}`;
 
   const name = String(raw['name'] ?? 'Unnamed Farm');
@@ -51,7 +52,7 @@ export function buildFarmProfile(
     documentUrls: Array.isArray(raw['documentUrls']) ? (raw['documentUrls'] as string[]) : [],
     imageUrls: Array.isArray(raw['imageUrls']) ? (raw['imageUrls'] as string[]) : [],
     status: 'pending_review',
-    aiProfileSummary: generateSummary(name, region, currentCrop, areaHectares, projectedRoiPercent, waterSource),
+    aiProfileSummary: await buildAiSummary(name, region, currentCrop, areaHectares, projectedRoiPercent, waterSource, certifications),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -130,16 +131,29 @@ function normalizeSoilType(raw: string): SoilType {
   return map[raw.toLowerCase()] ?? 'loamy';
 }
 
-function generateSummary(
+async function buildAiSummary(
   name: string,
   region: string,
   crop: string,
   area: number,
   roi: number,
-  water: WaterSource
-): string {
-  return `${name} is a ${area}-hectare ${crop} farm located in ${region}, Egypt. ` +
-    `Primary water source is ${water.replace('_', ' ')}. ` +
-    `Projected ROI of ${roi}% based on crop type and farm scale. ` +
-    `Pending admin review and geospatial enrichment.`;
+  water: WaterSource,
+  certifications: string[],
+): Promise<string> {
+  const result = await callLlm([
+    {
+      role: 'system',
+      content:
+        'You are an agricultural investment analyst. Write concise investor-facing farm profile summaries in 2-3 sentences. Focus on investability signals.',
+    },
+    {
+      role: 'user',
+      content:
+        `Summarize this farm for potential investors:\n` +
+        `Name: ${name}\nRegion: ${region}, Egypt\nCrop: ${crop}\nArea: ${area} hectares\n` +
+        `Water source: ${water.replace('_', ' ')}\nProjected ROI: ${roi}%\n` +
+        `Certifications: ${certifications.length ? certifications.join(', ') : 'none'}`,
+    },
+  ]);
+  return result.content;
 }

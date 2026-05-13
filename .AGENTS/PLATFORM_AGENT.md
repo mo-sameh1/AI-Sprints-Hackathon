@@ -41,7 +41,12 @@ Date: 2026-05-13
 - Implemented `JwtStrategy`, `JwtAuthGuard`, `RolesGuard`, and auth decorators.
 - Created `PrismaClientExceptionFilter` to map Prisma errors to HTTP responses across the API.
 - Added `db:migrate:prod` and `db:seed` NPM scripts for database deployment automation.
+- **NEW**: Replaced weather/news mock providers with live DB-backed alert APIs (integrated Open-Meteo & GDELT with Prisma models).
+- **NEW**: Implemented real inbound WhatsApp Webhook handler under `WhatsappController` to intake operator status messages and store them as `OperatorReport`s.
+- **NEW**: Solved monorepo TypeScript compilation issues (Prisma JsonValue conversion and Multer Express types).
+- **NEW**: Orchestrated local Docker daemon launch, ran schema migrations, seeded the database, and deployed the full stack (API + all 3 Next.js frontends) locally in live environment.
 
 ## Next Tasks
 
 - Monitor and scale database connections if traffic demands it.
+- Wire WhatsApp SMS notifications for high-priority alerts to investors.

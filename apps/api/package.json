@@ -32,5 +32,8 @@
     "@types/multer": "^2.1.0",
     "@types/passport-jwt": "^4.0.1",
     "prisma": "^6.19.3"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

@@ -57,6 +57,23 @@ The next agent should focus on transitioning from the in-memory mock backend to 
 3. ~~Add actual JWT Auth.~~ (Completed — JWT strategy, guards, decorators in API; auth context + login page in investor-web)
 4. Replace remaining integration stubs with vendor-backed HTTP clients after API keys and provider choices are finalized.
 
+## Latest Upload / Storage Checkpoint
+
+Date: 2026-05-13
+
+- Added `apps/api/src/modules/uploads/` — NestJS module with multer disk storage.
+  - `POST /api/uploads` — accepts `multipart/form-data` with `file` field; saves to `uploads/` dir (20 MB limit, image/doc/audio allowed); returns `{ url, filename, originalName, size, mimetype }`.
+  - `GET /api/uploads/files/:filename` — serves file directly (path-traversal guarded, `@Public()`).
+  - `UploadsService.uploadsDir()` resolves from `UPLOADS_DIR` env var or `{cwd}/uploads`; creates dir on module init.
+- Registered `UploadsModule` in `AppModule`.
+- Updated CORS origins in `main.ts` to include all three frontend ports (3003, 3004, 3005).
+- Updated `apps/operator-web/src/app/onboard/page.tsx`:
+  - `handleFiles` now POSTs each file to `POST /api/uploads` immediately on selection (no more base64 data URLs in memory).
+  - `UploadedAsset.url` stores server path; `handleSubmit` sends URLs in `imageUrls`/`documentUrls` fields.
+- Added `uploads/` to root `.gitignore`.
+- Updated `infra/docker/docker-compose.yml` — added named volumes for postgres and redis; commented-out API service template with `uploads_data` volume mount at `/app/uploads` (ready to uncomment).
+- No cloud credentials required — MVP uses local filesystem.
+
 ## Latest Admin Checkpoint
 
 Date: 2026-05-13

@@ -13,3 +13,4 @@ Thumbs.db
 tmp/
 .tools/
 .run-logs/
+/uploads/

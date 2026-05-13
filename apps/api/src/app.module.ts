@@ -10,6 +10,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ReportsModule } from './modules/reports/reports.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 import { PrismaModule } from './modules/prisma/prisma.module';
 
@@ -26,6 +27,7 @@ import { PrismaModule } from './modules/prisma/prisma.module';
     ReportsModule,
     AdminModule,
     IntegrationsModule,
+    UploadsModule,
   ],
   controllers: [AppController],
 })

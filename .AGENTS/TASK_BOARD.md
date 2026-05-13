@@ -7,7 +7,7 @@
 - [x] admin-web real audit log from API + RBAC auth guard (JWT + x-role header)
 - [ ] replace weather/news mock providers with real alert APIs
 - [ ] add WhatsApp webhook route for operator message intake
-- [ ] add persistent object storage for operator-uploaded media
+- [x] add persistent object storage for operator-uploaded media (local disk via multer; Docker volume mount)
 
 ## Completed (Phase 2: Persistence & Integrations)
 

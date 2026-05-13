@@ -14,6 +14,8 @@ const WATER_SOURCES = [
 ];
 const SOIL_TYPES = ['Clay', 'Sandy', 'Loamy', 'Silt', 'Chalky', 'Peaty'];
 
+const API_BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000';
+
 type UploadKind = 'photo' | 'document' | 'voice';
 type UploadStatus = 'processing' | 'ready' | 'error';
 
@@ -23,18 +25,19 @@ interface UploadedAsset {
   name: string;
   size: number;
   type: string;
-  dataUrl: string;
+  /** Server URL returned after upload, e.g. /api/uploads/files/123.jpg */
+  url: string;
   status: UploadStatus;
   error?: string;
 }
 
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
+async function uploadToServer(file: File): Promise<string> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${API_BASE}/api/uploads`, { method: 'POST', body: form });
+  if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+  const data = await res.json() as { url: string };
+  return data.url;
 }
 
 function formatFileSize(size: number) {
@@ -67,13 +70,13 @@ export default function OperatorOnboardPage() {
     if (!files?.length) return;
 
     const selected = Array.from(files);
-    const placeholders = selected.map((file, index) => ({
+    const placeholders: UploadedAsset[] = selected.map((file, index) => ({
       id: `${kind}-${Date.now()}-${index}`,
       kind,
       name: file.name,
       size: file.size,
       type: file.type || 'application/octet-stream',
-      dataUrl: '',
+      url: '',
       status: 'processing' as UploadStatus,
     }));
 
@@ -81,10 +84,10 @@ export default function OperatorOnboardPage() {
 
     await Promise.all(placeholders.map(async (asset, index) => {
       try {
-        const dataUrl = await readFileAsDataUrl(selected[index]);
-        setUploads(current => current.map(item => item.id === asset.id ? { ...item, dataUrl, status: 'ready' } : item));
+        const url = await uploadToServer(selected[index]);
+        setUploads(current => current.map(item => item.id === asset.id ? { ...item, url, status: 'ready' } : item));
       } catch {
-        setUploads(current => current.map(item => item.id === asset.id ? { ...item, status: 'error', error: 'Could not read file' } : item));
+        setUploads(current => current.map(item => item.id === asset.id ? { ...item, status: 'error', error: 'Upload failed' } : item));
       }
     }));
   };
@@ -115,11 +118,11 @@ export default function OperatorOnboardPage() {
   const handleSubmit = async () => {
     setLoading(true);
     const readyUploads = uploads.filter(asset => asset.status === 'ready');
-    const imageUrls = readyUploads.filter(asset => asset.kind === 'photo').map(asset => asset.dataUrl);
-    const documentUrls = readyUploads.filter(asset => asset.kind !== 'photo').map(asset => asset.dataUrl);
+    const imageUrls = readyUploads.filter(asset => asset.kind === 'photo').map(asset => asset.url);
+    const documentUrls = readyUploads.filter(asset => asset.kind !== 'photo').map(asset => asset.url);
 
     try {
-      await fetch('http://localhost:4000/api/farms', {
+      await fetch(`${API_BASE}/api/farms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -128,7 +131,7 @@ export default function OperatorOnboardPage() {
           requestedCapitalUsd: Number(farm.requestedCapitalUsd),
           imageUrls,
           documentUrls,
-          mediaSummary: readyUploads.map(asset => ({ kind: asset.kind, name: asset.name, size: asset.size, type: asset.type })),
+          mediaSummary: readyUploads.map(asset => ({ kind: asset.kind, name: asset.name, size: asset.size, type: asset.type, url: asset.url })),
         }),
       });
     } catch {

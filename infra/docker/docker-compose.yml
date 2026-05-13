@@ -7,8 +7,34 @@ services:
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   redis:
     image: redis:7
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
 
+  # Uncomment to run the API in Docker alongside postgres/redis.
+  # api:
+  #   build:
+  #     context: ../..
+  #     dockerfile: infra/docker/Dockerfile.api
+  #   ports:
+  #     - "4000:4000"
+  #   environment:
+  #     DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ai_sprints
+  #     REDIS_URL: redis://redis:6379
+  #     UPLOADS_DIR: /app/uploads
+  #   volumes:
+  #     - uploads_data:/app/uploads
+  #   depends_on:
+  #     - postgres
+  #     - redis
+
+volumes:
+  postgres_data:
+  redis_data:
+  # uploads_data:  # uncomment when running API in Docker

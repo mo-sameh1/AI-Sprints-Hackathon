@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth.context';
 import { apiFetch } from '@/lib/api';
+import { getInvestorProfileId } from '@/lib/investor';
 
 interface WatchlistFarm {
   id: string;
@@ -39,8 +40,9 @@ export default function PortfolioPage() {
       setLoading(true);
       try {
         // Fetch investor profile to get portfolio farm IDs
+        const investorId = getInvestorProfileId(user);
         const investor = await apiFetch<{ portfolio?: string[]; preferences?: { investorId: string } }>(
-          `/api/investors/${user.id}`
+          `/api/investors/${investorId}`
         );
         const farmIds: string[] = investor.portfolio ?? [];
         if (farmIds.length === 0) {
@@ -69,7 +71,7 @@ export default function PortfolioPage() {
     ? Math.round(watchlist.reduce((s, f) => s + f.projectedRoiPercent, 0) / watchlist.length)
     : 0;
 
-  const investorId = user?.id ?? 'inv-001';
+  const investorId = getInvestorProfileId(user);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>

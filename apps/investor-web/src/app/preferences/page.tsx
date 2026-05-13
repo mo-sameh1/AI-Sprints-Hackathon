@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth.context';
 import { apiFetch } from '@/lib/api';
+import { getInvestorProfileId } from '@/lib/investor';
 
 const CROPS = ['wheat', 'corn', 'rice', 'cotton', 'citrus', 'mango', 'olive', 'tomato', 'potato', 'sugarcane'];
 const REGIONS = ['Delta', 'Upper Egypt', 'Fayoum', 'Sinai', 'Canal Zone'];
@@ -29,7 +30,7 @@ export default function PreferencesPage() {
   // Sync investorId + name from auth once loaded
   useEffect(() => {
     if (!authLoading && user) {
-      setPrefs(p => ({ ...p, investorId: user.id, name: user.name }));
+      setPrefs(p => ({ ...p, investorId: getInvestorProfileId(user), name: user.name }));
     }
   }, [authLoading, user]);
 
@@ -56,11 +57,11 @@ export default function PreferencesPage() {
     try {
       await apiFetch('/api/investors/preferences', {
         method: 'POST',
-        body: JSON.stringify(prefs),
+        body: JSON.stringify({ ...prefs, userId: user?.id, email: user?.email }),
       });
       await apiFetch('/api/matches/rank', {
         method: 'POST',
-        body: JSON.stringify(prefs),
+        body: JSON.stringify({ ...prefs, userId: user?.id, email: user?.email }),
       });
       router.push('/opportunities?investorId=' + prefs.investorId);
     } catch {

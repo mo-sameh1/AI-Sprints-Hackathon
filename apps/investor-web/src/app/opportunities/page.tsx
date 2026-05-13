@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth.context';
 import { apiFetch } from '@/lib/api';
+import { getInvestorProfileId } from '@/lib/investor';
 
 // ── Demo data fallback ────────────────────────────────────────────────────────
 const DEMO_MATCHES = [
@@ -41,7 +42,9 @@ const DEMO_MATCHES = [
   },
 ];
 
-const FARM_DETAILS: Record<string, { name: string; region: string; governorate: string; currentCrop: string; areaHectares: number; requestedCapitalUsd: number; waterSource: string; status: string }> = {
+type FarmDetails = { name: string; region: string; governorate: string; currentCrop: string; areaHectares: number; requestedCapitalUsd: number; waterSource: string; status: string };
+
+const FARM_DETAILS: Record<string, FarmDetails> = {
   'farm-001': { name: 'Nile Delta Wheat Cooperative', region: 'Delta', governorate: 'Beheira', currentCrop: 'Wheat', areaHectares: 45, requestedCapitalUsd: 85000, waterSource: 'Nile', status: 'active' },
   'farm-002': { name: 'Upper Egypt Citrus Estate', region: 'Upper Egypt', governorate: 'Luxor', currentCrop: 'Citrus', areaHectares: 28, requestedCapitalUsd: 120000, waterSource: 'Groundwater', status: 'active' },
   'farm-003': { name: 'Fayoum Tomato & Potato Farm', region: 'Fayoum', governorate: 'Fayoum', currentCrop: 'Tomato', areaHectares: 15, requestedCapitalUsd: 45000, waterSource: 'Canal', status: 'active' },
@@ -56,8 +59,9 @@ const CROP_EMOJIS: Record<string, string> = {
 function OpportunitiesContent() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const investorId = searchParams.get('investorId') ?? user?.id ?? 'inv-001';
+  const investorId = searchParams.get('investorId') ?? getInvestorProfileId(user);
   const [matches, setMatches] = useState<typeof DEMO_MATCHES>([]);
+  const [farmDetails, setFarmDetails] = useState<Record<string, FarmDetails>>(FARM_DETAILS);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'score' | 'roi'>('score');
   const [filterConfidence, setFilterConfidence] = useState<string>('all');
@@ -65,20 +69,33 @@ function OpportunitiesContent() {
   useEffect(() => {
     const loadMatches = async () => {
       setLoading(true);
-      try {
-        const data = await apiFetch<typeof DEMO_MATCHES>(`/api/matches/${investorId}`);
-        if (Array.isArray(data) && data.length > 0) {
-          setMatches(data);
-        } else {
-          setMatches(DEMO_MATCHES);
-        }
-      } catch {
+      const [matchesResult, farmsResult] = await Promise.allSettled([
+        apiFetch<typeof DEMO_MATCHES>(`/api/matches/${investorId}`),
+        apiFetch<Array<FarmDetails & { id: string }>>('/api/farms/active'),
+      ]);
+
+      if (farmsResult.status === 'fulfilled' && Array.isArray(farmsResult.value)) {
+        const liveFarmDetails = farmsResult.value.reduce<Record<string, FarmDetails>>((acc, farm) => {
+          acc[farm.id] = farm;
+          return acc;
+        }, {});
+        setFarmDetails({ ...FARM_DETAILS, ...liveFarmDetails });
+      }
+
+      if (matchesResult.status === 'fulfilled' && Array.isArray(matchesResult.value) && matchesResult.value.length > 0) {
+        setMatches(matchesResult.value);
+      } else {
         setMatches(DEMO_MATCHES);
       }
       setLoading(false);
     };
     loadMatches();
   }, [investorId]);
+
+  const cropEmoji = (crop: string) => {
+    const displayCrop = crop.charAt(0).toUpperCase() + crop.slice(1).toLowerCase();
+    return CROP_EMOJIS[crop] ?? CROP_EMOJIS[displayCrop] ?? '🌱';
+  };
 
   const sorted = [...matches]
     .filter(m => filterConfidence === 'all' || m.confidence === filterConfidence)
@@ -138,14 +155,14 @@ function OpportunitiesContent() {
         ) : (
           <div className="card-grid card-grid-2" style={{ gap: '16px' }}>
             {sorted.map((match, i) => {
-              const farm = FARM_DETAILS[match.farmId];
+              const farm = farmDetails[match.farmId];
               if (!farm) return null;
               return (
                 <Link key={match.farmId} href={`/opportunities/${match.farmId}?investorId=${investorId}`} className="farm-card" style={{ animationDelay: `${i * 0.05}s` }}>
                   <div className="farm-card-header">
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '18px' }}>{CROP_EMOJIS[farm.currentCrop] ?? '🌱'}</span>
+                        <span style={{ fontSize: '18px' }}>{cropEmoji(farm.currentCrop)}</span>
                         <div className="farm-name">{farm.name}</div>
                       </div>
                       <div className="farm-location">📍 {farm.governorate}, {farm.region}</div>

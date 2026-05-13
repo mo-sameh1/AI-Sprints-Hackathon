@@ -80,7 +80,8 @@ export class NotificationsService {
           sourceUrl: signal.sourceUrl,
           actionRequired: signal.actionRequired,
           createdAt: new Date(signal.createdAt)
-        }))
+        })),
+        skipDuplicates: true,
       });
     }
     

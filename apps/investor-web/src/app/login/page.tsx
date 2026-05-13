@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/auth.context';
 export default function LoginPage() {
   const router = useRouter();
   const { login, isAuthenticated, loading } = useAuth();
-  const [email, setEmail] = useState('ahmed@investor.com');
+  const [email, setEmail] = useState('investor@example.com');
   const [password, setPassword] = useState('password123');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -125,8 +125,8 @@ export default function LoginPage() {
           </div>
           <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
             {[
-              { label: '🌾 Operator', email: 'mohamed@operator.com', href: 'http://localhost:3005' },
-              { label: '🛡️ Admin', email: 'admin@aisprints.com', href: 'http://localhost:3004' },
+              { label: '🌾 Operator', email: 'mohamed@operator.com', href: 'http://localhost:3002' },
+              { label: '🛡️ Admin', email: 'admin@aisprints.com', href: 'http://localhost:3001' },
             ].map(a => (
               <a key={a.email} href={a.href} style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',

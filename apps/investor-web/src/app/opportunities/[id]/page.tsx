@@ -4,15 +4,18 @@ import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth.context';
 import { apiFetch } from '@/lib/api';
+import { getInvestorProfileId } from '@/lib/investor';
 
 // Demo data
-const FARMS: Record<string, {
+interface FarmDetail {
   name: string; region: string; governorate: string; currentCrop: string;
   areaHectares: number; requestedCapitalUsd: number; waterSource: string;
   soilType: string; projectedRoiPercent: number; cropCycleDays: number;
   certifications: string[]; yieldHistory: { year: number; tonnesPerHectare: number; revenueUsd: number }[];
-  aiProfileSummary: string; status: string;
-}> = {
+  aiProfileSummary?: string; status: string;
+}
+
+const FARMS: Record<string, FarmDetail> = {
   'farm-001': {
     name: 'Nile Delta Wheat Cooperative', region: 'Delta', governorate: 'Beheira',
     currentCrop: 'Wheat', areaHectares: 45, requestedCapitalUsd: 85000,
@@ -88,11 +91,20 @@ function FarmDetailContent() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const farmId = params.id as string;
-  const investorId = searchParams.get('investorId') ?? user?.id ?? 'inv-001';
-  const farm = FARMS[farmId];
+  const investorId = searchParams.get('investorId') ?? getInvestorProfileId(user);
+  const [farm, setFarm] = useState<FarmDetail | null>(FARMS[farmId] ?? null);
   const [deal, setDeal] = useState<typeof DEMO_DEAL | null>(null);
   const [loadingDeal, setLoadingDeal] = useState(true);
   const [added, setAdded] = useState(false);
+
+  useEffect(() => {
+    setFarm(FARMS[farmId] ?? null);
+    apiFetch<FarmDetail & { error?: string }>(`/api/farms/${farmId}`)
+      .then(data => {
+        if (!('error' in data)) setFarm(data);
+      })
+      .catch(() => {});
+  }, [farmId]);
 
   useEffect(() => {
     const loadDeal = async () => {
@@ -110,6 +122,17 @@ function FarmDetailContent() {
     };
     loadDeal();
   }, [farmId, investorId, farm]);
+
+  const handleAddToPortfolio = async () => {
+    try {
+      await apiFetch(`/api/investors/${investorId}/portfolio`, {
+        method: 'POST',
+        body: JSON.stringify({ farmId }),
+      });
+    } finally {
+      setAdded(true);
+    }
+  };
 
   if (!farm) {
     return (
@@ -167,7 +190,7 @@ function FarmDetailContent() {
           <button
             id="add-to-portfolio-btn"
             className={`btn ${added ? 'btn-secondary' : 'btn-primary'}`}
-            onClick={() => setAdded(true)}
+            onClick={handleAddToPortfolio}
           >
             {added ? '✓ Watchlisted' : '+ Add to Watchlist'}
           </button>

@@ -29,11 +29,6 @@ export class DealsController {
     );
   }
 
-  @Get(':id')
-  getDeal(@Param('id') id: string) {
-    return this.dealsService.getDealById(id);
-  }
-
   @Get('investor/:investorId')
   getDealsForInvestor(@Param('investorId') investorId: string) {
     return this.dealsService.getDealsForInvestor(investorId);
@@ -42,5 +37,10 @@ export class DealsController {
   @Get('farm/:farmId')
   getDealsForFarm(@Param('farmId') farmId: string) {
     return this.dealsService.getDealsForFarm(farmId);
+  }
+
+  @Get(':id')
+  getDeal(@Param('id') id: string) {
+    return this.dealsService.getDealById(id);
   }
 }

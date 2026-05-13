@@ -6,6 +6,18 @@ import { PrismaService } from '../prisma/prisma.service';
 export class InvestorsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async findInvestorProfile(idOrUserId: string) {
+    return this.prisma.investorProfile.findFirst({
+      where: {
+        OR: [
+          { id: idOrUserId },
+          { userId: idOrUserId },
+        ],
+      },
+      include: { preferences: true },
+    });
+  }
+
   getPreferenceTemplate() {
     return {
       persona: 'investor',
@@ -23,7 +35,10 @@ export class InvestorsService {
   }
 
   async savePreferences(payload: Record<string, unknown>): Promise<{ status: string; investorId: string; profile: InvestorProfile }> {
-    const investorId = String(payload['investorId'] ?? `inv-${Date.now()}`);
+    const requestedInvestorId = String(payload['investorId'] ?? `inv-${Date.now()}`);
+    const userId = String(payload['userId'] ?? requestedInvestorId);
+    const existingProfile = await this.findInvestorProfile(requestedInvestorId);
+    const investorId = existingProfile?.id ?? requestedInvestorId;
     const prefs: InvestorPreferences = {
       investorId,
       riskTolerance: (payload['riskTolerance'] as InvestorPreferences['riskTolerance']) ?? 'medium',
@@ -38,11 +53,15 @@ export class InvestorsService {
 
     // Upsert User
     await this.prisma.user.upsert({
-      where: { id: String(payload['userId'] ?? investorId) },
-      update: {},
+      where: { id: userId },
+      update: {
+        email: String(payload['email'] ?? `${investorId}@example.com`),
+        name: String(payload['name'] ?? 'Investor'),
+        role: 'investor'
+      },
       create: {
-        id: String(payload['userId'] ?? investorId),
-        email: `${investorId}@example.com`,
+        id: userId,
+        email: String(payload['email'] ?? `${investorId}@example.com`),
         name: String(payload['name'] ?? 'Investor'),
         role: 'investor'
       }
@@ -62,7 +81,7 @@ export class InvestorsService {
       },
       create: {
         id: investorId,
-        userId: String(payload['userId'] ?? investorId),
+        userId,
         name: String(payload['name'] ?? 'Investor'),
         portfolio: [],
         preferences: {
@@ -76,21 +95,18 @@ export class InvestorsService {
   }
 
   async getInvestorById(id: string): Promise<InvestorProfile | { error: string }> {
-    const investor = await this.prisma.investorProfile.findUnique({
-      where: { id },
-      include: { preferences: true }
-    });
+    const investor = await this.findInvestorProfile(id);
     if (!investor) return { error: `Investor ${id} not found` };
     return investor as unknown as InvestorProfile;
   }
 
   async addToPortfolio(investorId: string, farmId: string): Promise<InvestorProfile | { error: string }> {
-    const investor = await this.prisma.investorProfile.findUnique({ where: { id: investorId } });
+    const investor = await this.findInvestorProfile(investorId);
     if (!investor) return { error: `Investor ${investorId} not found` };
     
     if (!investor.portfolio.includes(farmId)) {
       const updated = await this.prisma.investorProfile.update({
-        where: { id: investorId },
+        where: { id: investor.id },
         data: {
           portfolio: {
             push: farmId

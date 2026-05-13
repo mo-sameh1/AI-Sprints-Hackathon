@@ -35,12 +35,21 @@ export class MatchesController {
     }
 
     const investor = investorResult as InvestorProfile;
-    const farmList = await this.farmsService.getAllFarms();
-    return this.matchesService.rankMatches(investorId, investor.preferences, farmList);
+    const farmList = await this.farmsService.getActiveFarms();
+    return this.matchesService.rankMatches(investor.id, investor.preferences, farmList);
   }
 
   @Get(':investorId')
-  getMatchesForInvestor(@Param('investorId') investorId: string) {
-    return this.matchesService.getMatchesForInvestor(investorId);
+  async getMatchesForInvestor(@Param('investorId') investorId: string) {
+    const existing = await this.matchesService.getMatchesForInvestor(investorId);
+    if (Array.isArray(existing) && existing.length > 0) return existing;
+
+    const investorResult = await this.investorsService.getInvestorById(investorId);
+    if ('error' in investorResult) return existing;
+
+    const investor = investorResult as InvestorProfile;
+    const farms = await this.farmsService.getActiveFarms();
+    const ranked = await this.matchesService.rankMatches(investor.id, investor.preferences, farms);
+    return ranked.matches;
   }
 }

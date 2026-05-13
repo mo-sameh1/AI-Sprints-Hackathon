@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { AdminReviewItem, AuditLogEntry, ReviewStatus, ReviewItemType, RiskFlag } from '@ai-sprints/shared-types';
 import { PrismaService } from '../prisma/prisma.service';
+import { randomUUID } from 'crypto';
 
 const auditLog: AuditLogEntry[] = [];
 
@@ -100,6 +101,7 @@ export class AdminService implements OnModuleInit {
   ): Promise<AdminReviewItem> {
     const item = await this.prisma.adminReviewItem.create({
       data: {
+        id: `review-${randomUUID()}`,
         itemType,
         targetId,
         status: 'pending',

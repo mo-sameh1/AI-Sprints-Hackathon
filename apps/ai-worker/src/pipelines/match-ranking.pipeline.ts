@@ -10,7 +10,7 @@ export function rankInvestmentMatches(
   farms: FarmProfile[]
 ): MatchResult[] {
   const results: MatchResult[] = farms
-    .filter(f => f.status === 'active' || f.status === 'pending_review')
+    .filter(f => f.status === 'active')
     .map(farm => {
       const reasons: MatchReason[] = [];
       const riskFlags: RiskFlag[] = [];

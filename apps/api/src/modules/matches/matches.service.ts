@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { MatchResult, InvestorPreferences } from '@ai-sprints/shared-types';
 import { rankInvestmentMatches } from '@ai-sprints/ai-worker';
 import { PrismaService } from '../prisma/prisma.service';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class MatchesService {
@@ -23,6 +24,7 @@ export class MatchesService {
     if (matches.length > 0) {
       await this.prisma.matchResult.createMany({
         data: matches.map(match => ({
+          id: `match-${randomUUID()}`,
           farmId: match.farmId,
           investorId: match.investorId,
           score: match.score,

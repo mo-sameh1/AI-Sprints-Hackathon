@@ -52,10 +52,20 @@ Confidence: `high on structure and demo completeness, ready for presentation or 
 ## Next Phase
 
 The next agent should focus on transitioning from the in-memory mock backend to a real persistent infrastructure:
-1. Implement Postgres with Prisma.
+1. ~~Implement Postgres with Prisma.~~ (Partially completed for Farms and Investors)
 2. Hook up real OpenAI/HuggingFace API calls in the `ai-worker`.
 3. Add actual JWT Auth.
 4. Replace remaining integration stubs with vendor-backed HTTP clients after API keys and provider choices are finalized.
+
+## Latest Platform Checkpoint
+
+Date: 2026-05-13
+
+- Initialized Prisma schema in `apps/api/prisma` mapping to `@ai-sprints/shared-types`.
+- Created PostgreSQL database and ran initial Prisma push.
+- Refactored `FarmsService` and `InvestorsService` to use `PrismaService` instead of in-memory maps.
+- Seeded initial demo data into the Postgres database.
+- Fixed async controller issues for `DealsController` and `MatchesController`.
 
 ## Latest Operator Checkpoint
 

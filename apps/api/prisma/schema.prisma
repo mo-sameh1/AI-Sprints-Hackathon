@@ -1,0 +1,164 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  role      String   // 'investor', 'operator', 'admin'
+  name      String
+  createdAt DateTime @default(now())
+
+  investorProfile InvestorProfile?
+  operatorProfile OperatorProfile?
+}
+
+model InvestorProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  portfolio String[] // array of farm IDs
+  
+  preferences         InvestorPreferences?
+  matchResults        MatchResult[]
+  dealRecommendations DealRecommendation[]
+}
+
+model InvestorPreferences {
+  investorId              String          @id
+  investor                InvestorProfile @relation(fields: [investorId], references: [id])
+  riskTolerance           String
+  investmentHorizonMonths Int
+  capitalBudgetUsd        Float
+  liquidityPreference     String
+  preferredCrops          String[]
+  preferredRegions        String[]
+  expectedRoiPercent      Float
+  sustainabilityFocus     Boolean
+}
+
+model OperatorProfile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id])
+  name               String
+  phone              String
+  whatsappNumber     String?
+  region             String
+  verificationStatus String   // 'pending', 'verified', 'rejected'
+  createdAt          DateTime @default(now())
+
+  farms FarmProfile[]
+}
+
+model FarmProfile {
+  id                  String   @id @default(uuid())
+  operatorId          String
+  operator            OperatorProfile @relation(fields: [operatorId], references: [id])
+  name                String
+  country             String
+  region              String
+  governorate         String
+  latitude            Float?
+  longitude           Float?
+  areaHectares        Float
+  soilType            String
+  waterSource         String
+  currentCrop         String
+  plannedCrops        String[]
+  requestedCapitalUsd Float
+  projectedRoiPercent Float
+  cropCycleDays       Int
+  yieldHistory        Json     // Store array of YieldHistory
+  certifications      String[]
+  documentUrls        String[]
+  imageUrls           String[]
+  status              String   // 'pending_review', 'active', etc.
+  aiProfileSummary    String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  matchResults        MatchResult[]
+  dealRecommendations DealRecommendation[]
+  reports             OperatorReport[]
+}
+
+model MatchResult {
+  id                  String          @id @default(uuid())
+  farmId              String
+  farm                FarmProfile     @relation(fields: [farmId], references: [id])
+  investorId          String
+  investor            InvestorProfile @relation(fields: [investorId], references: [id])
+  score               Float
+  confidence          String          // 'low', 'medium', 'high'
+  reasons             Json            // Array of MatchReason
+  riskFlags           Json            // Array of RiskFlag
+  horizonFitMonths    Int
+  estimatedRoiPercent Float
+  createdAt           DateTime        @default(now())
+}
+
+model DealRecommendation {
+  id                       String          @id @default(uuid())
+  farmId                   String
+  farm                     FarmProfile     @relation(fields: [farmId], references: [id])
+  investorId               String
+  investor                 InvestorProfile @relation(fields: [investorId], references: [id])
+  structureType            String
+  recommendedInvestmentUsd Float
+  projectedRoiPercent      Float
+  durationMonths           Int
+  terms                    Json            // Array of DealTerm
+  rationale                String
+  riskSummary              String
+  aiConfidence             String          // 'low', 'medium', 'high'
+  createdAt                DateTime        @default(now())
+}
+
+model NotificationSignal {
+  id                  String   @id @default(uuid())
+  alertType           String
+  severity            String
+  title               String
+  summary             String
+  affectedFarmIds     String[]
+  affectedInvestorIds String[]
+  reasoning           String
+  sourceUrl           String?
+  actionRequired      Boolean
+  createdAt           DateTime @default(now())
+}
+
+model OperatorReport {
+  id          String      @id @default(uuid())
+  farmId      String
+  farm        FarmProfile @relation(fields: [farmId], references: [id])
+  operatorId  String
+  reportType  String      // 'yield', 'status', 'incident', 'financial'
+  period      String      // '2025-Q2'
+  content     Json
+  notes       String
+  submittedAt DateTime    @default(now())
+}
+
+model AdminReviewItem {
+  id         String   @id @default(uuid())
+  itemType   String   // 'farm_profile', 'match_result', etc.
+  targetId   String
+  status     String   // 'pending', 'approved', 'rejected', etc.
+  aiSummary  String
+  flags      Json     // Array of RiskFlag
+  reviewedBy String?
+  reviewNote String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

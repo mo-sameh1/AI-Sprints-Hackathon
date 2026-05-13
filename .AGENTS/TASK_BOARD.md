@@ -2,9 +2,6 @@
 
 ## Ready Now (Phase 2: Persistence & Integrations)
 
-- [ ] initialize Prisma schema based on `shared-types`
-- [ ] spin up local Postgres/Redis docker-compose
-- [ ] migrate NestJS in-memory maps to Prisma repositories
 - [ ] wire `ai-worker` to real OpenAI/HuggingFace APIs
 - [ ] add JWT Auth for admin, operator, and investor roles
 - [ ] replace weather/news mock providers with real alert APIs
@@ -12,6 +9,10 @@
 - [ ] add persistent object storage for operator-uploaded media
 
 ## Completed (Phase 2: Persistence & Integrations)
+
+- [x] initialize Prisma schema based on `shared-types`
+- [x] spin up local Postgres/Redis docker-compose (Or native Postgres)
+- [x] migrate NestJS in-memory maps to Prisma repositories (Partially done, Farms and Investors completed)
 
 - [x] define integration provider contracts and local stubs for weather, news, geospatial, and WhatsApp
 - [x] wire Open-Meteo live weather forecast, geocoding, elevation, and soil moisture calls

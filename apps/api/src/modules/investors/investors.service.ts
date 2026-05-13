@@ -1,32 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InvestorProfile, InvestorPreferences } from '@ai-sprints/shared-types';
-
-// ── In-memory store ───────────────────────────────────────────────────────────
-const investorStore = new Map<string, InvestorProfile>();
-
-// Seed demo investor
-investorStore.set('inv-001', {
-  id: 'inv-001',
-  userId: 'user-001',
-  name: 'Ahmed Mansour',
-  preferences: {
-    investorId: 'inv-001',
-    riskTolerance: 'medium',
-    investmentHorizonMonths: 12,
-    capitalBudgetUsd: 100000,
-    liquidityPreference: 'medium',
-    preferredCrops: ['wheat', 'citrus', 'tomato'],
-    preferredRegions: ['Delta', 'Fayoum'],
-    expectedRoiPercent: 15,
-    sustainabilityFocus: true,
-  },
-  portfolio: [],
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-});
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class InvestorsService {
+  constructor(private readonly prisma: PrismaService) {}
+
   getPreferenceTemplate() {
     return {
       persona: 'investor',
@@ -43,10 +22,8 @@ export class InvestorsService {
     };
   }
 
-  savePreferences(payload: Record<string, unknown>): { status: string; investorId: string; profile: InvestorProfile } {
+  async savePreferences(payload: Record<string, unknown>): Promise<{ status: string; investorId: string; profile: InvestorProfile }> {
     const investorId = String(payload['investorId'] ?? `inv-${Date.now()}`);
-    const existing = investorStore.get(investorId);
-
     const prefs: InvestorPreferences = {
       investorId,
       riskTolerance: (payload['riskTolerance'] as InvestorPreferences['riskTolerance']) ?? 'medium',
@@ -59,36 +36,77 @@ export class InvestorsService {
       sustainabilityFocus: Boolean(payload['sustainabilityFocus'] ?? false),
     };
 
-    const profile: InvestorProfile = {
-      id: investorId,
-      userId: String(payload['userId'] ?? investorId),
-      name: String(payload['name'] ?? 'Investor'),
-      preferences: prefs,
-      portfolio: existing?.portfolio ?? [],
-      createdAt: existing?.createdAt ?? new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    // Upsert User
+    await this.prisma.user.upsert({
+      where: { id: String(payload['userId'] ?? investorId) },
+      update: {},
+      create: {
+        id: String(payload['userId'] ?? investorId),
+        email: `${investorId}@example.com`,
+        name: String(payload['name'] ?? 'Investor'),
+        role: 'investor'
+      }
+    });
 
-    investorStore.set(investorId, profile);
-    return { status: 'saved', investorId, profile };
+    // Upsert InvestorProfile
+    const profile = await this.prisma.investorProfile.upsert({
+      where: { id: investorId },
+      update: {
+        name: String(payload['name'] ?? 'Investor'),
+        preferences: {
+          upsert: {
+            create: prefs,
+            update: prefs
+          }
+        }
+      },
+      create: {
+        id: investorId,
+        userId: String(payload['userId'] ?? investorId),
+        name: String(payload['name'] ?? 'Investor'),
+        portfolio: [],
+        preferences: {
+          create: prefs
+        }
+      },
+      include: { preferences: true }
+    });
+
+    return { status: 'saved', investorId, profile: profile as unknown as InvestorProfile };
   }
 
-  getInvestorById(id: string): InvestorProfile | { error: string } {
-    return investorStore.get(id) ?? { error: `Investor ${id} not found` };
+  async getInvestorById(id: string): Promise<InvestorProfile | { error: string }> {
+    const investor = await this.prisma.investorProfile.findUnique({
+      where: { id },
+      include: { preferences: true }
+    });
+    if (!investor) return { error: `Investor ${id} not found` };
+    return investor as unknown as InvestorProfile;
   }
 
-  addToPortfolio(investorId: string, farmId: string): InvestorProfile | { error: string } {
-    const investor = investorStore.get(investorId);
+  async addToPortfolio(investorId: string, farmId: string): Promise<InvestorProfile | { error: string }> {
+    const investor = await this.prisma.investorProfile.findUnique({ where: { id: investorId } });
     if (!investor) return { error: `Investor ${investorId} not found` };
+    
     if (!investor.portfolio.includes(farmId)) {
-      investor.portfolio.push(farmId);
-      investor.updatedAt = new Date().toISOString();
-      investorStore.set(investorId, investor);
+      const updated = await this.prisma.investorProfile.update({
+        where: { id: investorId },
+        data: {
+          portfolio: {
+            push: farmId
+          }
+        },
+        include: { preferences: true }
+      });
+      return updated as unknown as InvestorProfile;
     }
-    return investor;
+    return investor as unknown as InvestorProfile;
   }
 
-  getAllInvestors(): InvestorProfile[] {
-    return Array.from(investorStore.values());
+  async getAllInvestors(): Promise<InvestorProfile[]> {
+    const investors = await this.prisma.investorProfile.findMany({
+      include: { preferences: true }
+    });
+    return investors as unknown as InvestorProfile[];
   }
 }

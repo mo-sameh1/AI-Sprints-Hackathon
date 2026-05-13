@@ -13,12 +13,12 @@ export class DealsController {
   ) {}
 
   @Post('recommend')
-  recommendStructure(@Body() payload: Record<string, unknown>) {
+  async recommendStructure(@Body() payload: Record<string, unknown>) {
     const farmId = String(payload['farmId'] ?? '');
     const investorId = String(payload['investorId'] ?? 'inv-001');
 
-    const farmResult = this.farmsService.getFarmById(farmId);
-    const investorResult = this.investorsService.getInvestorById(investorId);
+    const farmResult = await this.farmsService.getFarmById(farmId);
+    const investorResult = await this.investorsService.getInvestorById(investorId);
 
     if ('error' in farmResult) return farmResult;
     if ('error' in investorResult) return investorResult;

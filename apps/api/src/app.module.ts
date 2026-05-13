@@ -11,8 +11,11 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 
+import { PrismaModule } from './modules/prisma/prisma.module';
+
 @Module({
   imports: [
+    PrismaModule,
     AuthModule,
     InvestorsModule,
     OperatorsModule,

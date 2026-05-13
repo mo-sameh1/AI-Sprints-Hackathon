@@ -2,11 +2,10 @@
 
 ## Ready Now (Phase 2: Persistence & Integrations)
 
-- [ ] replace weather/news mock providers with real alert APIs
-- [ ] add WhatsApp webhook route for operator message intake
-
 ## Completed (Phase 2: Persistence & Integrations)
 
+- [x] replace weather/news mock providers with real alert APIs
+- [x] add WhatsApp webhook route for operator message intake
 - [x] implement prisma exception filter and database migration NPM scripts for production
 - [x] wire `ai-worker` to real Google Gemini APIs (gemini-1.5-flash + deterministic fallback)
 - [x] add JWT Auth for admin, operator, and investor roles (API guards + investor-web auth context)

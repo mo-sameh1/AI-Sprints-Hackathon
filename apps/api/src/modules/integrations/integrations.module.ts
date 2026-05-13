@@ -5,8 +5,10 @@ import { WeatherProvider } from './weather/weather.provider';
 import { WhatsappController } from './whatsapp/whatsapp.controller';
 import { WhatsappProvider } from './whatsapp/whatsapp.provider';
 import { IntegrationsController } from './integrations.controller';
+import { ReportsModule } from '../reports/reports.module';
 
 @Module({
+  imports: [ReportsModule],
   controllers: [WhatsappController, IntegrationsController],
   providers: [GeospatialProvider, NewsProvider, WeatherProvider, WhatsappProvider],
   exports: [GeospatialProvider, NewsProvider, WeatherProvider, WhatsappProvider],

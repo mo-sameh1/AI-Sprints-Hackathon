@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   FarmProfile,
   NewsSignal,
@@ -12,14 +12,19 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(
     private readonly weatherProvider: WeatherProvider,
     private readonly newsProvider: NewsProvider,
     private readonly prisma: PrismaService
   ) {
-    void this.evaluateSignals().catch((error) => {
-      console.warn('Initial notification signal evaluation failed', error);
-    });
+    // Delay initial evaluation to allow DB connection to establish
+    setTimeout(() => {
+      void this.evaluateSignals().catch((error) => {
+        this.logger.warn('Initial notification signal evaluation failed', error);
+      });
+    }, 3000);
   }
 
   async evaluateSignals(
@@ -29,13 +34,18 @@ export class NotificationsService {
       farmIds?: string[];
     } = {}
   ): Promise<NotificationSignal[]> {
-    const fakeFarms = this.getDemoFarms(payload.farmIds);
+    const farms = await this.loadFarms(payload.farmIds);
+    if (farms.length === 0) {
+      this.logger.warn('No farms found for notification evaluation');
+      return [];
+    }
+
     const weatherForecasts =
       payload.weatherForecasts ??
       (
         await this.weatherProvider.fetchForecast({
           farmIds: payload.farmIds,
-          locations: fakeFarms.map((farm) => ({
+          locations: farms.map((farm) => ({
             farmId: farm.id,
             region: farm.region,
             country: farm.country,
@@ -48,12 +58,12 @@ export class NotificationsService {
       payload.newsSignals ??
       (
         await this.newsProvider.fetchSignals({
-          crops: [...new Set(fakeFarms.map((farm) => farm.currentCrop))],
-          regions: [...new Set(fakeFarms.map((farm) => farm.region))],
+          crops: [...new Set(farms.map((farm) => farm.currentCrop))],
+          regions: [...new Set(farms.map((farm) => farm.region))],
         })
       ).signals;
 
-    const signals = reasonAboutAlerts(fakeFarms, weatherForecasts, newsSignals);
+    const signals = reasonAboutAlerts(farms, weatherForecasts, newsSignals);
     
     // Save to DB
     if (signals.length > 0) {
@@ -117,7 +127,34 @@ export class NotificationsService {
     })) as NotificationSignal[];
   }
 
-  private getDemoFarms(farmIds?: string[]): FarmProfile[] {
+  /**
+   * Load farms from the Prisma database. Falls back to hardcoded demo data
+   * when the database is empty or unavailable.
+   */
+  private async loadFarms(farmIds?: string[]): Promise<FarmProfile[]> {
+    try {
+      const where: Record<string, unknown> = { status: 'active' };
+      if (farmIds && farmIds.length > 0) {
+        where['id'] = { in: farmIds };
+      }
+      const dbFarms = await this.prisma.farmProfile.findMany({ where });
+      if (dbFarms.length > 0) {
+        return dbFarms.map(f => ({
+          ...f,
+          createdAt: f.createdAt.toISOString(),
+          updatedAt: f.updatedAt.toISOString(),
+          yieldHistory: f.yieldHistory as FarmProfile['yieldHistory'],
+        })) as FarmProfile[];
+      }
+    } catch (err) {
+      this.logger.warn('Could not load farms from DB, using demo fallback', err);
+    }
+
+    return this.getDemoFarmsFallback(farmIds);
+  }
+
+  /** Hardcoded demo farms used only when the database is empty or unreachable. */
+  private getDemoFarmsFallback(farmIds?: string[]): FarmProfile[] {
     const farms: FarmProfile[] = [
       {
         id: 'farm-001',

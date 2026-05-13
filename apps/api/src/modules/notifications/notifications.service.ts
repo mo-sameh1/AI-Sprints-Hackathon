@@ -41,27 +41,9 @@ export class NotificationsService {
     }
 
     const weatherForecasts =
-      payload.weatherForecasts ??
-      (
-        await this.weatherProvider.fetchForecast({
-          farmIds: payload.farmIds,
-          locations: farms.map((farm) => ({
-            farmId: farm.id,
-            region: farm.region,
-            country: farm.country,
-            latitude: farm.latitude,
-            longitude: farm.longitude,
-          })),
-        })
-      ).forecasts;
+      payload.weatherForecasts ?? await this.fetchWeatherForecasts(farms, payload.farmIds);
     const newsSignals =
-      payload.newsSignals ??
-      (
-        await this.newsProvider.fetchSignals({
-          crops: [...new Set(farms.map((farm) => farm.currentCrop))],
-          regions: [...new Set(farms.map((farm) => farm.region))],
-        })
-      ).signals;
+      payload.newsSignals ?? await this.fetchNewsSignals(farms);
 
     const signals = reasonAboutAlerts(farms, weatherForecasts, newsSignals);
     
@@ -86,6 +68,81 @@ export class NotificationsService {
     }
     
     return signals;
+  }
+
+  private async fetchWeatherForecasts(farms: FarmProfile[], farmIds?: string[]): Promise<WeatherForecast[]> {
+    try {
+      return (
+        await this.weatherProvider.fetchForecast({
+          farmIds,
+          locations: farms.map((farm) => ({
+            farmId: farm.id,
+            region: farm.region,
+            country: farm.country,
+            latitude: farm.latitude,
+            longitude: farm.longitude,
+          })),
+        })
+      ).forecasts;
+    } catch (err) {
+      this.logger.warn('Weather provider failed, using demo weather signals', err);
+      return this.getDemoWeatherForecasts(farms);
+    }
+  }
+
+  private async fetchNewsSignals(farms: FarmProfile[]): Promise<NewsSignal[]> {
+    try {
+      return (
+        await this.newsProvider.fetchSignals({
+          crops: [...new Set(farms.map((farm) => farm.currentCrop))],
+          regions: [...new Set(farms.map((farm) => farm.region))],
+        })
+      ).signals;
+    } catch (err) {
+      this.logger.warn('News provider failed, using demo market signals', err);
+      return this.getDemoNewsSignals(farms);
+    }
+  }
+
+  private getDemoWeatherForecasts(farms: FarmProfile[]): WeatherForecast[] {
+    return farms.slice(0, 3).map((farm, index) => ({
+      farmId: farm.id,
+      region: farm.region,
+      temperatureCelsius: index === 1 ? 41 : 29,
+      rainfallMm: farm.region === 'Delta' ? 95 : index === 1 ? 3 : 18,
+      humidity: farm.region === 'Delta' ? 88 : 55,
+      condition: farm.region === 'Delta' ? 'Heavy thunderstorms' : index === 1 ? 'Extreme heat' : 'Dry and windy',
+      riskLevel: farm.region === 'Delta' || index === 1 ? 'high' : 'medium',
+      forecastDate: new Date().toISOString(),
+    }));
+  }
+
+  private getDemoNewsSignals(farms: FarmProfile[]): NewsSignal[] {
+    const crops = [...new Set(farms.map((farm) => farm.currentCrop))];
+    const regions = [...new Set(farms.map((farm) => farm.region))];
+
+    return [
+      {
+        id: 'demo-news-wheat-policy',
+        headline: 'Egypt raises support for domestic wheat producers',
+        source: 'Demo Market Desk',
+        relevance: 'policy',
+        sentiment: 'positive',
+        affectedCrops: crops.includes('wheat') ? ['wheat'] : crops.slice(0, 1),
+        affectedRegions: regions.includes('Delta') ? ['Delta'] : regions.slice(0, 1),
+        publishedAt: new Date().toISOString(),
+      },
+      {
+        id: 'demo-news-tomato-price-drop',
+        headline: 'Tomato prices drop 18% after regional oversupply',
+        source: 'Demo Market Desk',
+        relevance: 'market',
+        sentiment: 'negative',
+        affectedCrops: crops.includes('tomato') ? ['tomato'] : crops.slice(0, 1),
+        affectedRegions: regions.includes('Fayoum') ? ['Fayoum'] : regions.slice(0, 1),
+        publishedAt: new Date().toISOString(),
+      },
+    ];
   }
 
   async getAllSignals(): Promise<NotificationSignal[]> {

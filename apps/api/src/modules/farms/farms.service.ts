@@ -105,7 +105,7 @@ export class FarmsService {
       await this.adminService.createReviewItem(
         'farm_profile',
         created.id,
-        created.aiProfileSummary || 'New farm profile submitted for review.',
+        `${created.name} in ${created.governorate}, ${created.region} requested $${created.requestedCapitalUsd.toLocaleString()} for ${created.currentCrop}. ${created.aiProfileSummary || 'New farm profile submitted for review.'}`,
         flags,
       );
     } catch (err) {

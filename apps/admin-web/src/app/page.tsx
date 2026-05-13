@@ -14,6 +14,10 @@ interface AuditEntry {
   id: string; adminId: string; action: string;
   targetType: string; targetId: string; timestamp: string;
 }
+interface AlertItem {
+  id: string; severity: 'critical' | 'warning' | 'info' | string;
+  title: string; summary: string; actionRequired: boolean;
+}
 interface AdminStats { total: number; pending: number; approved: number; rejected: number; escalated: number; criticalFlags: number; }
 
 // ── Demo fallbacks ────────────────────────────────────────────────────────────
@@ -23,7 +27,7 @@ const DEMO_QUEUE: ReviewItem[] = [
   { id: 'review-002', itemType: 'deal_recommendation', targetId: 'deal-farm-002', status: 'pending', aiSummary: 'Revenue share deal for Upper Egypt Citrus Estate. $96K investment, 17.1% projected ROI.', flags: [{ severity: 'low', label: 'Single Year History' }], createdAt: '2025-05-10T14:00:00Z' },
   { id: 'review-003', itemType: 'alert', targetId: 'alert-1', status: 'pending', aiSummary: 'Critical weather alert for Delta region. Heavy rainfall projected — 95mm over 3 days.', flags: [{ severity: 'high', label: 'Critical Weather Risk' }], createdAt: '2025-05-12T08:00:00Z' },
 ];
-const DEMO_ALERTS = [
+const DEMO_ALERTS: AlertItem[] = [
   { id: 'alert-1', severity: 'critical', title: '🚨 Critical: Extreme Weather in Delta', summary: 'Heavy Thunderstorms expected — 95mm rainfall. Risk to active wheat crops.', actionRequired: true },
   { id: 'alert-2', severity: 'warning', title: '⚠️ Weather Watch: Fayoum', summary: 'Extreme Heat forecast. Monitor crop hydration levels.', actionRequired: false },
   { id: 'alert-3', severity: 'info', title: 'Egypt raises wheat import tariffs', summary: 'Policy signal: Positive market movement for domestic wheat producers.', actionRequired: false },
@@ -59,7 +63,7 @@ export default function AdminDashboard() {
   const [queue, setQueue] = useState<ReviewItem[]>(DEMO_QUEUE);
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
   const [activeTab, setActiveTab] = useState('all');
-  const [alerts] = useState(DEMO_ALERTS);
+  const [alerts, setAlerts] = useState<AlertItem[]>(DEMO_ALERTS);
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
@@ -69,16 +73,19 @@ export default function AdminDashboard() {
   useEffect(() => {
     const load = async () => {
       setDataLoading(true);
-      const [statsData, queueData, auditData] = await Promise.allSettled([
+      const [statsData, queueData, auditData, alertsData] = await Promise.allSettled([
         apiFetch<AdminStats>('/admin/stats'),
         apiFetch<ReviewItem[]>('/admin/queue'),
         apiFetch<AuditEntry[]>('/admin/audit'),
+        apiFetch<AlertItem[]>('/notifications'),
       ]);
       if (statsData.status === 'fulfilled') setStats(statsData.value);
       if (queueData.status === 'fulfilled' && Array.isArray(queueData.value) && queueData.value.length)
         setQueue(queueData.value);
       if (auditData.status === 'fulfilled' && Array.isArray(auditData.value))
         setAuditLog(auditData.value);
+      if (alertsData.status === 'fulfilled' && Array.isArray(alertsData.value) && alertsData.value.length)
+        setAlerts(alertsData.value);
       setDataLoading(false);
     };
     load();

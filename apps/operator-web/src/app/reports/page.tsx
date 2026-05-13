@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
-const API_BASE = 'http://localhost:4000/api';
+const API_BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000';
 const OPERATOR_ID = 'op-new';
 
 interface FarmOption {
@@ -53,8 +53,8 @@ export default function OperatorReportsPage() {
       setLoading(true);
       try {
         const [farmResponse, reportResponse] = await Promise.all([
-          fetch(`${API_BASE}/farms`),
-          fetch(`${API_BASE}/reports/operator/${OPERATOR_ID}`),
+          fetch(`${API_BASE}/api/farms`),
+          fetch(`${API_BASE}/api/reports/operator/${OPERATOR_ID}`),
         ]);
         const farmData = await farmResponse.json();
         const reportData = await reportResponse.json();
@@ -80,7 +80,7 @@ export default function OperatorReportsPage() {
     setSaving(true);
     setMessage('');
     try {
-      const response = await fetch(`${API_BASE}/reports/submit`, {
+      const response = await fetch(`${API_BASE}/api/reports/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -97,6 +97,7 @@ export default function OperatorReportsPage() {
           },
         }),
       });
+      if (!response.ok) throw new Error(`API returned ${response.status}`);
       const saved = await response.json();
       setReports(current => [saved, ...current]);
       setMessage('Report submitted for operator review history.');

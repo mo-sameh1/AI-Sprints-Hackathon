@@ -143,7 +143,7 @@ export class NotificationsService {
           ...f,
           createdAt: f.createdAt.toISOString(),
           updatedAt: f.updatedAt.toISOString(),
-          yieldHistory: f.yieldHistory as FarmProfile['yieldHistory'],
+          yieldHistory: f.yieldHistory as any,
         })) as FarmProfile[];
       }
     } catch (err) {

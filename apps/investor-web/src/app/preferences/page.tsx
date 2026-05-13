@@ -1,13 +1,16 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/auth.context';
+import { apiFetch } from '@/lib/api';
 
 const CROPS = ['wheat', 'corn', 'rice', 'cotton', 'citrus', 'mango', 'olive', 'tomato', 'potato', 'sugarcane'];
 const REGIONS = ['Delta', 'Upper Egypt', 'Fayoum', 'Sinai', 'Canal Zone'];
 
 export default function PreferencesPage() {
   const router = useRouter();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [prefs, setPrefs] = useState({
@@ -22,6 +25,13 @@ export default function PreferencesPage() {
     expectedRoiPercent: 15,
     sustainabilityFocus: false,
   });
+
+  // Sync investorId + name from auth once loaded
+  useEffect(() => {
+    if (!authLoading && user) {
+      setPrefs(p => ({ ...p, investorId: user.id, name: user.name }));
+    }
+  }, [authLoading, user]);
 
   const toggleCrop = (crop: string) => {
     setPrefs(p => ({
@@ -44,22 +54,18 @@ export default function PreferencesPage() {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      // Save preferences
-      await fetch('http://localhost:4000/api/investors/preferences', {
+      await apiFetch('/api/investors/preferences', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(prefs),
       });
-      // Run matching
-      await fetch('http://localhost:4000/api/matches/rank', {
+      await apiFetch('/api/matches/rank', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(prefs),
       });
       router.push('/opportunities?investorId=' + prefs.investorId);
     } catch {
-      // Even if API fails, navigate to show demo data
-      router.push('/opportunities?investorId=' + prefs.investorId + '&demo=true');
+      // Navigate anyway — opportunities page has demo fallback
+      router.push('/opportunities?investorId=' + prefs.investorId);
     }
     setLoading(false);
   };

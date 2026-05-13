@@ -53,9 +53,27 @@ Confidence: `high on structure and demo completeness, ready for presentation or 
 
 The next agent should focus on transitioning from the in-memory mock backend to a real persistent infrastructure:
 1. ~~Implement Postgres with Prisma.~~ (Completed)
-2. Hook up real OpenAI/HuggingFace API calls in the `ai-worker`.
-3. Add actual JWT Auth.
+2. ~~Hook up real OpenAI/HuggingFace API calls in the `ai-worker`.~~ (Completed — gpt-4o-mini with deterministic fallback)
+3. ~~Add actual JWT Auth.~~ (Completed — JWT strategy, guards, decorators in API; auth context + login page in investor-web)
 4. Replace remaining integration stubs with vendor-backed HTTP clients after API keys and provider choices are finalized.
+
+## Latest Investor Checkpoint
+
+Date: 2026-05-13
+
+- Added `apps/investor-web/src/lib/api.ts` — typed `apiFetch` with Bearer token injection and 401 redirect.
+- Added `apps/investor-web/src/contexts/auth.context.tsx` — `AuthProvider` + `useAuth` hook; persists JWT in localStorage.
+- Added `apps/investor-web/src/app/login/page.tsx` — login form pre-filled with demo creds (ahmed@investor.com / password123).
+- Added `apps/investor-web/src/components/providers.tsx` — wraps layout with `AuthProvider`.
+- Updated `apps/investor-web/src/app/layout.tsx` to include `Providers` wrapper.
+- Updated `apps/investor-web/src/app/page.tsx` — nav shows authenticated user name + sign-out button.
+- Updated preferences, opportunities, portfolio, and farm detail pages to use real auth and `apiFetch`.
+- Added `@/*` path alias to `apps/investor-web/tsconfig.json`.
+- Added `@nestjs/jwt ^11`, `@nestjs/passport ^11`, `passport`, `passport-jwt`, `bcryptjs` to API.
+- Implemented `JwtStrategy`, `JwtAuthGuard` (dev-permissive when `JWT_SECRET` unset), `RolesGuard`, and auth decorators.
+- Wired `gpt-4o-mini` in `ai-worker` with deterministic fallback when `OPENAI_API_KEY` absent.
+- Added exponential-backoff retry to `integration-http.ts` (skip 4xx, retry 5xx/network).
+- Added `health()` methods to weather, news, and geospatial providers; aggregated at `GET /integrations/health`.
 
 ## Latest Platform Checkpoint
 

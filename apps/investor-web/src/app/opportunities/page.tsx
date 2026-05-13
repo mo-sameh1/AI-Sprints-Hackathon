@@ -2,6 +2,8 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/auth.context';
+import { apiFetch } from '@/lib/api';
 
 // ── Demo data fallback ────────────────────────────────────────────────────────
 const DEMO_MATCHES = [
@@ -53,7 +55,8 @@ const CROP_EMOJIS: Record<string, string> = {
 
 function OpportunitiesContent() {
   const searchParams = useSearchParams();
-  const investorId = searchParams.get('investorId') ?? 'inv-001';
+  const { user } = useAuth();
+  const investorId = searchParams.get('investorId') ?? user?.id ?? 'inv-001';
   const [matches, setMatches] = useState<typeof DEMO_MATCHES>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'score' | 'roi'>('score');
@@ -63,13 +66,12 @@ function OpportunitiesContent() {
     const loadMatches = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:4000/api/matches/${investorId}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            setMatches(data);
-          } else throw new Error('empty');
-        } else throw new Error('api');
+        const data = await apiFetch<typeof DEMO_MATCHES>(`/api/matches/${investorId}`);
+        if (Array.isArray(data) && data.length > 0) {
+          setMatches(data);
+        } else {
+          setMatches(DEMO_MATCHES);
+        }
       } catch {
         setMatches(DEMO_MATCHES);
       }

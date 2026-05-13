@@ -2,8 +2,8 @@
 
 ## Ready Now (Phase 2: Persistence & Integrations)
 
-- [ ] wire `ai-worker` to real OpenAI/HuggingFace APIs
-- [ ] add JWT Auth for admin, operator, and investor roles
+- [x] wire `ai-worker` to real OpenAI/HuggingFace APIs (gpt-4o-mini + deterministic fallback)
+- [x] add JWT Auth for admin, operator, and investor roles (API guards + investor-web auth context)
 - [ ] replace weather/news mock providers with real alert APIs
 - [ ] add WhatsApp webhook route for operator message intake
 - [ ] add persistent object storage for operator-uploaded media

@@ -1,6 +1,11 @@
+'use client';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/auth.context';
+import { useRouter } from 'next/navigation';
 
 export default function InvestorHomePage() {
+  const { user, logout, isAuthenticated } = useAuth();
+  const router = useRouter();
   return (
     <div>
       {/* ── Navigation ─────────────────────────────────────────────────── */}
@@ -21,9 +26,19 @@ export default function InvestorHomePage() {
             Farm<span style={{ color: '#22c55e' }}>Vest</span>
           </span>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <Link href="/opportunities" className="btn btn-ghost btn-sm">Browse Farms</Link>
-          <Link href="/preferences" className="btn btn-primary btn-sm">Get Matched →</Link>
+          {isAuthenticated ? (
+            <>
+              <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{user?.name}</span>
+              <button className="btn btn-ghost btn-sm" onClick={() => { logout(); router.push('/login'); }}>Sign Out</button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="btn btn-ghost btn-sm">Sign In</Link>
+              <Link href="/preferences" className="btn btn-primary btn-sm">Get Matched →</Link>
+            </>
+          )}
         </div>
       </nav>
 

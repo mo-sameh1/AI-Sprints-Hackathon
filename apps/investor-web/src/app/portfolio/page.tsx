@@ -1,12 +1,76 @@
 'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/auth.context';
+import { apiFetch } from '@/lib/api';
 
-const WATCHLIST_FARMS = [
-  { id: 'farm-001', name: 'Nile Delta Wheat Cooperative', region: 'Delta', crop: 'Wheat', roi: 14, score: 74, emoji: '🌾' },
-  { id: 'farm-003', name: 'Fayoum Tomato & Potato Farm', region: 'Fayoum', crop: 'Tomato', roi: 22, score: 89, emoji: '🍅' },
+interface WatchlistFarm {
+  id: string;
+  name: string;
+  region: string;
+  currentCrop: string;
+  projectedRoiPercent: number;
+  score?: number;
+  emoji?: string;
+}
+
+const CROP_EMOJI: Record<string, string> = {
+  wheat: '🌾', citrus: '🍊', tomato: '🍅', potato: '🥔',
+  sugarcane: '🌿', olive: '🫒', mango: '🥭', corn: '🌽',
+};
+
+const STATIC_WATCHLIST: WatchlistFarm[] = [
+  { id: 'farm-001', name: 'Nile Delta Wheat Cooperative', region: 'Delta', currentCrop: 'wheat', projectedRoiPercent: 14, score: 74 },
+  { id: 'farm-003', name: 'Fayoum Tomato & Potato Farm', region: 'Fayoum', currentCrop: 'tomato', projectedRoiPercent: 22, score: 89 },
 ];
 
 export default function PortfolioPage() {
+  const { user, isAuthenticated } = useAuth();
+  const [watchlist, setWatchlist] = useState<WatchlistFarm[]>(STATIC_WATCHLIST);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      setLoading(false);
+      return;
+    }
+
+    const loadPortfolio = async () => {
+      setLoading(true);
+      try {
+        // Fetch investor profile to get portfolio farm IDs
+        const investor = await apiFetch<{ portfolio?: string[]; preferences?: { investorId: string } }>(
+          `/api/investors/${user.id}`
+        );
+        const farmIds: string[] = investor.portfolio ?? [];
+        if (farmIds.length === 0) {
+          setWatchlist(STATIC_WATCHLIST);
+          setLoading(false);
+          return;
+        }
+        // Fetch each farm
+        const farms = await Promise.all(
+          farmIds.map(id =>
+            apiFetch<WatchlistFarm & { status?: string }>(`/api/farms/${id}`).catch(() => null)
+          )
+        );
+        const valid = farms.filter(Boolean) as WatchlistFarm[];
+        setWatchlist(valid.length ? valid : STATIC_WATCHLIST);
+      } catch {
+        setWatchlist(STATIC_WATCHLIST);
+      }
+      setLoading(false);
+    };
+
+    loadPortfolio();
+  }, [isAuthenticated, user]);
+
+  const avgRoi = watchlist.length
+    ? Math.round(watchlist.reduce((s, f) => s + f.projectedRoiPercent, 0) / watchlist.length)
+    : 0;
+
+  const investorId = user?.id ?? 'inv-001';
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
       {/* Topbar */}
@@ -19,16 +83,19 @@ export default function PortfolioPage() {
           <div style={{ width: '1px', height: '20px', background: 'var(--border)' }} />
           <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>My Portfolio</span>
         </div>
-        <Link href="/opportunities" className="btn btn-primary btn-sm">Browse More Farms</Link>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {user && <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{user.name}</span>}
+          <Link href="/opportunities" className="btn btn-primary btn-sm">Browse More Farms</Link>
+        </div>
       </div>
 
       <div style={{ padding: '40px', maxWidth: '900px', margin: '0 auto' }}>
         {/* Stats */}
         <div className="card-grid card-grid-3" style={{ marginBottom: '32px', gap: '16px' }}>
           {[
-            { icon: '💼', label: 'Watchlisted Farms', value: '2', color: 'blue' },
-            { icon: '📈', label: 'Avg. Projected ROI', value: '18%', color: 'green' },
-            { icon: '💰', label: 'Total Capital Opportunity', value: '$130K', color: 'amber' },
+            { icon: '💼', label: 'Watchlisted Farms', value: loading ? '…' : String(watchlist.length), color: 'blue' },
+            { icon: '📈', label: 'Avg. Projected ROI', value: loading ? '…' : `${avgRoi}%`, color: 'green' },
+            { icon: '💰', label: 'Total Capital Opportunity', value: loading ? '…' : `$${Math.round(watchlist.reduce((s, f) => s + ((f as { requestedCapitalUsd?: number }).requestedCapitalUsd ?? 0), 0) / 1000)}K`, color: 'amber' },
           ].map(s => (
             <div key={s.label} className="stat-card">
               <div className={`stat-icon ${s.color}`}>{s.icon}</div>
@@ -43,32 +110,47 @@ export default function PortfolioPage() {
         {/* Watchlist */}
         <div style={{ marginBottom: '24px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Watchlist</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {WATCHLIST_FARMS.map(farm => (
-              <Link key={farm.id} href={`/opportunities/${farm.id}?investorId=inv-001`}
-                style={{ textDecoration: 'none', display: 'block' }}>
-                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer' }}>
-                  <div style={{ fontSize: '28px' }}>{farm.emoji}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, marginBottom: '4px' }}>{farm.name}</div>
-                    <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>📍 {farm.region} • {farm.crop}</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-green)' }}>{farm.roi}%</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>ROI</div>
-                  </div>
-                  <div style={{
-                    width: '44px', height: '44px', borderRadius: '12px',
-                    background: 'var(--accent-green-dim)', border: '1px solid rgba(34,197,94,0.3)',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--accent-green)', lineHeight: '1' }}>{farm.score}</div>
-                    <div style={{ fontSize: '9px', color: 'var(--accent-green)' }}>MATCH</div>
-                  </div>
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[1, 2].map(i => (
+                <div key={i} className="card" style={{ height: '72px' }}>
+                  <div className="skeleton" style={{ height: '100%', borderRadius: '8px' }} />
                 </div>
-              </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {watchlist.map(farm => {
+                const emoji = CROP_EMOJI[farm.currentCrop?.toLowerCase()] ?? '🌱';
+                return (
+                  <Link key={farm.id} href={`/opportunities/${farm.id}?investorId=${investorId}`}
+                    style={{ textDecoration: 'none', display: 'block' }}>
+                    <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer' }}>
+                      <div style={{ fontSize: '28px' }}>{emoji}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, marginBottom: '4px' }}>{farm.name}</div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>📍 {farm.region} • {farm.currentCrop}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-green)' }}>{farm.projectedRoiPercent}%</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>ROI</div>
+                      </div>
+                      {farm.score != null && (
+                        <div style={{
+                          width: '44px', height: '44px', borderRadius: '12px',
+                          background: 'var(--accent-green-dim)', border: '1px solid rgba(34,197,94,0.3)',
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--accent-green)', lineHeight: '1' }}>{farm.score}</div>
+                          <div style={{ fontSize: '9px', color: 'var(--accent-green)' }}>MATCH</div>
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* CTA */}

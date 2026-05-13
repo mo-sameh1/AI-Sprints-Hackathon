@@ -2,6 +2,8 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/auth.context';
+import { apiFetch } from '@/lib/api';
 
 // Demo data
 const FARMS: Record<string, {
@@ -84,8 +86,9 @@ const CROP_EMOJI: Record<string, string> = { Wheat: '🌾', Citrus: '🍊', Toma
 function FarmDetailContent() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const farmId = params.id as string;
-  const investorId = searchParams.get('investorId') ?? 'inv-001';
+  const investorId = searchParams.get('investorId') ?? user?.id ?? 'inv-001';
   const farm = FARMS[farmId];
   const [deal, setDeal] = useState<typeof DEMO_DEAL | null>(null);
   const [loadingDeal, setLoadingDeal] = useState(true);
@@ -95,15 +98,11 @@ function FarmDetailContent() {
     const loadDeal = async () => {
       setLoadingDeal(true);
       try {
-        const res = await fetch('http://localhost:4000/api/deals/recommend', {
+        const data = await apiFetch<typeof DEMO_DEAL>('/api/deals/recommend', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ farmId, investorId }),
         });
-        if (res.ok) {
-          const data = await res.json();
-          setDeal(data);
-        } else throw new Error('api');
+        setDeal(data);
       } catch {
         setDeal({ ...DEMO_DEAL, rationale: DEMO_DEAL.rationale.replace('Fayoum Tomato & Potato Farm', farm?.name ?? farmId) });
       }

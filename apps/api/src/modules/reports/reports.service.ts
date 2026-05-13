@@ -20,7 +20,7 @@ export class ReportsService {
     };
     
     await this.prisma.operatorReport.create({
-      data: report
+      data: report as any
     });
     
     return {

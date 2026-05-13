@@ -23,7 +23,6 @@ export class MatchesService {
     if (matches.length > 0) {
       await this.prisma.matchResult.createMany({
         data: matches.map(match => ({
-          id: match.id,
           farmId: match.farmId,
           investorId: match.investorId,
           score: match.score,

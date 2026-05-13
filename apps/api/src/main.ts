@@ -1,3 +1,9 @@
+import { config } from 'dotenv';
+import { resolve } from 'path';
+// Load .env — try monorepo root (dev) then apps/api/ (Docker)
+config({ path: resolve(process.cwd(), '.env') });
+config({ path: resolve(process.cwd(), 'apps/api/.env') });
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 

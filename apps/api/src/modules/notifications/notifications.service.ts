@@ -8,14 +8,14 @@ import {
 import { reasonAboutAlerts } from '@ai-sprints/ai-worker';
 import { NewsProvider } from '../integrations/news/news.provider';
 import { WeatherProvider } from '../integrations/weather/weather.provider';
-
-const signalStore = new Map<string, NotificationSignal>();
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     private readonly weatherProvider: WeatherProvider,
-    private readonly newsProvider: NewsProvider
+    private readonly newsProvider: NewsProvider,
+    private readonly prisma: PrismaService
   ) {
     void this.evaluateSignals().catch((error) => {
       console.warn('Initial notification signal evaluation failed', error);
@@ -54,24 +54,67 @@ export class NotificationsService {
       ).signals;
 
     const signals = reasonAboutAlerts(fakeFarms, weatherForecasts, newsSignals);
-    signals.forEach((signal) => signalStore.set(signal.id, signal));
+    
+    // Save to DB
+    if (signals.length > 0) {
+      await this.prisma.notificationSignal.createMany({
+        data: signals.map(signal => ({
+          id: signal.id,
+          alertType: signal.alertType,
+          severity: signal.severity,
+          title: signal.title,
+          summary: signal.summary,
+          affectedFarmIds: signal.affectedFarmIds,
+          affectedInvestorIds: signal.affectedInvestorIds,
+          reasoning: signal.reasoning,
+          sourceUrl: signal.sourceUrl,
+          actionRequired: signal.actionRequired,
+          createdAt: new Date(signal.createdAt)
+        }))
+      });
+    }
+    
     return signals;
   }
 
-  getAllSignals(): NotificationSignal[] {
-    return Array.from(signalStore.values()).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+  async getAllSignals(): Promise<NotificationSignal[]> {
+    const signals = await this.prisma.notificationSignal.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    return signals.map(s => ({
+      ...s,
+      createdAt: s.createdAt.toISOString()
+    })) as NotificationSignal[];
   }
 
-  getSignalById(id: string): NotificationSignal | { error: string } {
-    return signalStore.get(id) ?? { error: `Signal ${id} not found` };
+  async getSignalById(id: string): Promise<NotificationSignal | { error: string }> {
+    const signal = await this.prisma.notificationSignal.findUnique({
+      where: { id }
+    });
+    
+    if (!signal) {
+      return { error: `Signal ${id} not found` };
+    }
+    
+    return {
+      ...signal,
+      createdAt: signal.createdAt.toISOString()
+    } as NotificationSignal;
   }
 
-  getSignalsForFarm(farmId: string): NotificationSignal[] {
-    return Array.from(signalStore.values()).filter((signal) =>
-      signal.affectedFarmIds.includes(farmId)
-    );
+  async getSignalsForFarm(farmId: string): Promise<NotificationSignal[]> {
+    const signals = await this.prisma.notificationSignal.findMany({
+      where: {
+        affectedFarmIds: {
+          has: farmId
+        }
+      }
+    });
+    
+    return signals.map(s => ({
+      ...s,
+      createdAt: s.createdAt.toISOString()
+    })) as NotificationSignal[];
   }
 
   private getDemoFarms(farmIds?: string[]): FarmProfile[] {

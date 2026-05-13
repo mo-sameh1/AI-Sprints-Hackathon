@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { AdminReviewItem, AuditLogEntry, ReviewStatus, ReviewItemType, RiskFlag } from '@ai-sprints/shared-types';
+import { PrismaService } from '../prisma/prisma.service';
 
-const reviewStore = new Map<string, AdminReviewItem>();
 const auditLog: AuditLogEntry[] = [];
 let itemCounter = 1;
 
@@ -45,55 +45,90 @@ const seedItems: AdminReviewItem[] = [
     updatedAt: '2025-05-12T08:00:00Z',
   },
 ];
-seedItems.forEach(item => {
-  reviewStore.set(item.id, item);
-  itemCounter++;
-});
 
 @Injectable()
-export class AdminService {
-  getReviewQueue(status?: ReviewStatus): AdminReviewItem[] {
-    const items = Array.from(reviewStore.values());
-    if (status) return items.filter(i => i.status === status);
+export class AdminService implements OnModuleInit {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async onModuleInit() {
+    const count = await this.prisma.adminReviewItem.count();
+    if (count === 0) {
+      for (const item of seedItems) {
+        await this.prisma.adminReviewItem.create({
+          data: {
+            ...item,
+            flags: item.flags as any,
+            createdAt: new Date(item.createdAt),
+            updatedAt: new Date(item.updatedAt)
+          }
+        });
+        itemCounter++;
+      }
+    }
+  }
+
+  async getReviewQueue(status?: ReviewStatus): Promise<AdminReviewItem[]> {
+    const where = status ? { status } : undefined;
+    const items = await this.prisma.adminReviewItem.findMany({ where });
+    
     return items.sort((a, b) => {
-      const order = { pending: 0, escalated: 1, approved: 2, rejected: 3, overridden: 4 };
-      return order[a.status] - order[b.status];
-    });
+      const order: Record<string, number> = { pending: 0, escalated: 1, approved: 2, rejected: 3, overridden: 4 };
+      return (order[a.status] ?? 99) - (order[b.status] ?? 99);
+    }).map(i => ({
+      ...i,
+      flags: i.flags as any,
+      createdAt: i.createdAt.toISOString(),
+      updatedAt: i.updatedAt.toISOString(),
+    })) as AdminReviewItem[];
   }
 
-  getReviewItem(id: string): AdminReviewItem | { error: string } {
-    return reviewStore.get(id) ?? { error: `Review item ${id} not found` };
+  async getReviewItem(id: string): Promise<AdminReviewItem | { error: string }> {
+    const item = await this.prisma.adminReviewItem.findUnique({ where: { id } });
+    if (!item) return { error: `Review item ${id} not found` };
+    
+    return {
+      ...item,
+      flags: item.flags as any,
+      createdAt: item.createdAt.toISOString(),
+      updatedAt: item.updatedAt.toISOString(),
+    } as AdminReviewItem;
   }
 
-  createReviewItem(
+  async createReviewItem(
     itemType: ReviewItemType,
     targetId: string,
     aiSummary: string,
     flags: RiskFlag[] = []
-  ): AdminReviewItem {
+  ): Promise<AdminReviewItem> {
     const id = `review-${String(itemCounter++).padStart(3, '0')}`;
-    const item: AdminReviewItem = {
-      id,
-      itemType,
-      targetId,
-      status: 'pending',
-      aiSummary,
-      flags,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    reviewStore.set(id, item);
-    return item;
+    
+    const item = await this.prisma.adminReviewItem.create({
+      data: {
+        id,
+        itemType,
+        targetId,
+        status: 'pending',
+        aiSummary,
+        flags: flags as any,
+      }
+    });
+
+    return {
+      ...item,
+      flags: item.flags as any,
+      createdAt: item.createdAt.toISOString(),
+      updatedAt: item.updatedAt.toISOString(),
+    } as AdminReviewItem;
   }
 
-  reviewItem(
+  async reviewItem(
     id: string,
     action: 'approve' | 'reject' | 'override' | 'escalate',
     adminId: string,
     note?: string
-  ): AdminReviewItem | { error: string } {
-    const item = reviewStore.get(id);
-    if (!item) return { error: `Review item ${id} not found` };
+  ): Promise<AdminReviewItem | { error: string }> {
+    const before = await this.prisma.adminReviewItem.findUnique({ where: { id } });
+    if (!before) return { error: `Review item ${id} not found` };
 
     const statusMap: Record<string, ReviewStatus> = {
       approve: 'approved',
@@ -102,43 +137,54 @@ export class AdminService {
       escalate: 'escalated',
     };
 
-    const before = { ...item };
-    const updated: AdminReviewItem = {
-      ...item,
-      status: statusMap[action],
-      reviewedBy: adminId,
-      reviewNote: note,
-      updatedAt: new Date().toISOString(),
-    };
-    reviewStore.set(id, updated);
+    const updated = await this.prisma.adminReviewItem.update({
+      where: { id },
+      data: {
+        status: statusMap[action],
+        reviewedBy: adminId,
+        reviewNote: note,
+      }
+    });
+
+    const parsedUpdated = {
+      ...updated,
+      flags: updated.flags as any,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+    } as AdminReviewItem;
 
     auditLog.push({
       id: `audit-${Date.now()}`,
       adminId,
       action,
-      targetType: item.itemType,
-      targetId: item.targetId,
-      before,
-      after: updated,
+      targetType: before.itemType as ReviewItemType,
+      targetId: before.targetId,
+      before: {
+        ...before,
+        flags: before.flags as any,
+        createdAt: before.createdAt.toISOString(),
+        updatedAt: before.updatedAt.toISOString(),
+      } as AdminReviewItem,
+      after: parsedUpdated,
       timestamp: new Date().toISOString(),
     });
 
-    return updated;
+    return parsedUpdated;
   }
 
   getAuditLog(): AuditLogEntry[] {
     return [...auditLog].reverse();
   }
 
-  getStats(): Record<string, number> {
-    const items = Array.from(reviewStore.values());
+  async getStats(): Promise<Record<string, number>> {
+    const items = await this.prisma.adminReviewItem.findMany();
     return {
       total: items.length,
       pending: items.filter(i => i.status === 'pending').length,
       approved: items.filter(i => i.status === 'approved').length,
       rejected: items.filter(i => i.status === 'rejected').length,
       escalated: items.filter(i => i.status === 'escalated').length,
-      criticalFlags: items.filter(i => i.flags.some(f => f.severity === 'high')).length,
+      criticalFlags: items.filter(i => (i.flags as any[]).some(f => f.severity === 'high')).length,
     };
   }
 }

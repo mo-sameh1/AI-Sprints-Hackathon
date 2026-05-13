@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { OperatorReport } from '@ai-sprints/shared-types';
-
-const reportStore = new Map<string, OperatorReport>();
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ReportsService {
-  submitReport(payload: Record<string, unknown>): OperatorReport {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async submitReport(payload: Record<string, unknown>): Promise<OperatorReport> {
     const id = `report-${Date.now()}`;
-    const report: OperatorReport = {
+    const report = {
       id,
       farmId: String(payload['farmId'] ?? ''),
       operatorId: String(payload['operatorId'] ?? ''),
@@ -15,17 +16,40 @@ export class ReportsService {
       period: String(payload['period'] ?? new Date().toISOString().slice(0, 7)),
       content: (payload['content'] as Record<string, unknown>) ?? {},
       notes: String(payload['notes'] ?? ''),
-      submittedAt: new Date().toISOString(),
+      submittedAt: new Date()
     };
-    reportStore.set(id, report);
-    return report;
+    
+    await this.prisma.operatorReport.create({
+      data: report
+    });
+    
+    return {
+      ...report,
+      submittedAt: report.submittedAt.toISOString()
+    } as OperatorReport;
   }
 
-  getReportsForFarm(farmId: string): OperatorReport[] {
-    return Array.from(reportStore.values()).filter(r => r.farmId === farmId);
+  async getReportsForFarm(farmId: string): Promise<OperatorReport[]> {
+    const reports = await this.prisma.operatorReport.findMany({
+      where: { farmId }
+    });
+    
+    return reports.map(r => ({
+      ...r,
+      content: r.content as any,
+      submittedAt: r.submittedAt.toISOString()
+    })) as OperatorReport[];
   }
 
-  getReportsForOperator(operatorId: string): OperatorReport[] {
-    return Array.from(reportStore.values()).filter(r => r.operatorId === operatorId);
+  async getReportsForOperator(operatorId: string): Promise<OperatorReport[]> {
+    const reports = await this.prisma.operatorReport.findMany({
+      where: { operatorId }
+    });
+    
+    return reports.map(r => ({
+      ...r,
+      content: r.content as any,
+      submittedAt: r.submittedAt.toISOString()
+    })) as OperatorReport[];
   }
 }

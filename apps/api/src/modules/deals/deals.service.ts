@@ -1,29 +1,75 @@
 import { Injectable } from '@nestjs/common';
 import { DealRecommendation, FarmProfile, InvestorPreferences } from '@ai-sprints/shared-types';
 import { recommendDealStructure } from '@ai-sprints/ai-worker';
-
-const dealStore = new Map<string, DealRecommendation>();
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class DealsService {
-  recommendStructure(
+  constructor(private readonly prisma: PrismaService) {}
+
+  async recommendStructure(
     farm: FarmProfile,
     preferences: InvestorPreferences
-  ): DealRecommendation {
+  ): Promise<DealRecommendation> {
     const deal = recommendDealStructure(farm, preferences);
-    dealStore.set(deal.id, deal);
+    
+    await this.prisma.dealRecommendation.create({
+      data: {
+        id: deal.id,
+        farmId: deal.farmId,
+        investorId: deal.investorId,
+        structureType: deal.structureType,
+        recommendedInvestmentUsd: deal.recommendedInvestmentUsd,
+        projectedRoiPercent: deal.projectedRoiPercent,
+        durationMonths: deal.durationMonths,
+        terms: deal.terms as any,
+        rationale: deal.rationale,
+        riskSummary: deal.riskSummary,
+        aiConfidence: deal.aiConfidence,
+        createdAt: new Date(deal.createdAt)
+      }
+    });
+
     return deal;
   }
 
-  getDealById(id: string): DealRecommendation | { error: string } {
-    return dealStore.get(id) ?? { error: `Deal ${id} not found` };
+  async getDealById(id: string): Promise<DealRecommendation | { error: string }> {
+    const deal = await this.prisma.dealRecommendation.findUnique({
+      where: { id }
+    });
+    
+    if (!deal) {
+      return { error: `Deal ${id} not found` };
+    }
+    
+    return {
+      ...deal,
+      terms: deal.terms as any,
+      createdAt: deal.createdAt.toISOString()
+    } as DealRecommendation;
   }
 
-  getDealsForInvestor(investorId: string): DealRecommendation[] {
-    return Array.from(dealStore.values()).filter(d => d.investorId === investorId);
+  async getDealsForInvestor(investorId: string): Promise<DealRecommendation[]> {
+    const deals = await this.prisma.dealRecommendation.findMany({
+      where: { investorId }
+    });
+    
+    return deals.map(deal => ({
+      ...deal,
+      terms: deal.terms as any,
+      createdAt: deal.createdAt.toISOString()
+    })) as DealRecommendation[];
   }
 
-  getDealsForFarm(farmId: string): DealRecommendation[] {
-    return Array.from(dealStore.values()).filter(d => d.farmId === farmId);
+  async getDealsForFarm(farmId: string): Promise<DealRecommendation[]> {
+    const deals = await this.prisma.dealRecommendation.findMany({
+      where: { farmId }
+    });
+    
+    return deals.map(deal => ({
+      ...deal,
+      terms: deal.terms as any,
+      createdAt: deal.createdAt.toISOString()
+    })) as DealRecommendation[];
   }
 }

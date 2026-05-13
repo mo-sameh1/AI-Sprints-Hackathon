@@ -12,7 +12,7 @@
 
 - [x] initialize Prisma schema based on `shared-types`
 - [x] spin up local Postgres/Redis docker-compose (Or native Postgres)
-- [x] migrate NestJS in-memory maps to Prisma repositories (Partially done, Farms and Investors completed)
+- [x] migrate NestJS in-memory maps to Prisma repositories (Matches, Deals, Reports, Admin, Notifications, Farms, and Investors completed)
 
 - [x] define integration provider contracts and local stubs for weather, news, geospatial, and WhatsApp
 - [x] wire Open-Meteo live weather forecast, geocoding, elevation, and soil moisture calls

@@ -6,7 +6,10 @@
     "dev": "nest start --watch --entryFile apps/api/src/main",
     "build": "nest build",
     "lint": "echo lint not configured yet",
-    "test": "echo test not configured yet"
+    "test": "echo test not configured yet",
+    "db:migrate:prod": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:seed": "prisma db seed"
   },
   "dependencies": {
     "@ai-sprints/ai-worker": "0.1.0",

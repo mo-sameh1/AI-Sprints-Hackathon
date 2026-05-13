@@ -15,7 +15,9 @@
     "dev:worker": "npm run dev -w @ai-sprints/ai-worker",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "db:migrate:prod": "npm run db:migrate:prod -w @ai-sprints/api",
+    "db:seed": "npm run db:seed -w @ai-sprints/api"
   },
   "engines": {
     "node": ">=20"

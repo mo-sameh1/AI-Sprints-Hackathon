@@ -36,6 +36,22 @@ const AGRICULTURE_TERMS = ['agriculture', 'farming', 'crop', 'irrigation'];
 
 @Injectable()
 export class NewsProvider {
+  async health(): Promise<{ provider: string; status: 'ok' | 'error'; latencyMs?: number; error?: string }> {
+    const start = Date.now();
+    try {
+      const url = new URL('https://api.gdeltproject.org/api/v2/doc/doc');
+      url.searchParams.set('query', 'agriculture Egypt');
+      url.searchParams.set('mode', 'ArtList');
+      url.searchParams.set('format', 'json');
+      url.searchParams.set('maxrecords', '1');
+      url.searchParams.set('timespan', '1d');
+      await fetchJson('gdelt-health', url, { timeoutMs: 8000, retries: 0 });
+      return { provider: 'gdelt', status: 'ok', latencyMs: Date.now() - start };
+    } catch (err) {
+      return { provider: 'gdelt', status: 'error', error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
   async fetchSignals(query: NewsSignalQuery = {}): Promise<NewsProviderResponse> {
     const gdeltQuery = buildGdeltQuery(query);
     const url = new URL('https://api.gdeltproject.org/api/v2/doc/doc');

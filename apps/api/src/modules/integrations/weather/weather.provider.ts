@@ -96,6 +96,20 @@ const WEATHER_CODE_LABELS: Record<number, string> = {
 
 @Injectable()
 export class WeatherProvider {
+  async health(): Promise<{ provider: string; status: 'ok' | 'error'; latencyMs?: number; error?: string }> {
+    const start = Date.now();
+    try {
+      const url = new URL('https://api.open-meteo.com/v1/forecast');
+      url.searchParams.set('latitude', '30.0444');
+      url.searchParams.set('longitude', '31.2357');
+      url.searchParams.set('current', 'temperature_2m');
+      await fetchJson('open-meteo-health', url, { timeoutMs: 5000, retries: 0 });
+      return { provider: 'open-meteo', status: 'ok', latencyMs: Date.now() - start };
+    } catch (err) {
+      return { provider: 'open-meteo', status: 'error', error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
   async fetchForecast(query: WeatherForecastQuery = {}): Promise<WeatherProviderResponse> {
     const horizonDays = Math.min(Math.max(query.horizonDays ?? 5, 1), 16);
     const locations = await this.resolveLocations(query);

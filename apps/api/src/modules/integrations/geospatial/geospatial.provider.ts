@@ -34,6 +34,19 @@ const REGION_COORDINATES: Record<string, { latitude: number; longitude: number }
 
 @Injectable()
 export class GeospatialProvider {
+  async health(): Promise<{ provider: string; status: 'ok' | 'error'; latencyMs?: number; error?: string }> {
+    const start = Date.now();
+    try {
+      const url = new URL('https://api.open-meteo.com/v1/elevation');
+      url.searchParams.set('latitude', '30.0444');
+      url.searchParams.set('longitude', '31.2357');
+      await fetchJson('open-meteo-elevation-health', url, { timeoutMs: 5000, retries: 0 });
+      return { provider: 'open-meteo-geospatial', status: 'ok', latencyMs: Date.now() - start };
+    } catch (err) {
+      return { provider: 'open-meteo-geospatial', status: 'error', error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
   async enrichFarmLocation(
     request: GeospatialEnrichmentRequest
   ): Promise<GeospatialEnrichmentResponse> {

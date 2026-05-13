@@ -53,9 +53,23 @@ Confidence: `high on structure and demo completeness, ready for presentation or 
 
 The next agent should focus on transitioning from the in-memory mock backend to a real persistent infrastructure:
 1. ~~Implement Postgres with Prisma.~~ (Completed)
-2. ~~Hook up real OpenAI/HuggingFace API calls in the `ai-worker`.~~ (Completed — gpt-4o-mini with deterministic fallback)
+2. ~~Hook up real OpenAI/HuggingFace API calls in the `ai-worker`.~~ (Completed — migrated to Google Gemini gemini-1.5-flash with deterministic fallback)
 3. ~~Add actual JWT Auth.~~ (Completed — JWT strategy, guards, decorators in API; auth context + login page in investor-web)
 4. Replace remaining integration stubs with vendor-backed HTTP clients after API keys and provider choices are finalized.
+
+## Latest LLM Migration Checkpoint
+
+Date: 2026-05-13
+
+- Migrated `apps/ai-worker/src/providers/llm.provider.ts` from OpenAI to Google Gemini.
+- Installed `@google/generative-ai ^0.24.1` in ai-worker; removed runtime dependency on `openai` package (kept in package.json for now but unused).
+- `LlmResponse.provider` field is now `'gemini' | 'deterministic'` (was `'openai' | 'deterministic'`).
+- Default model: `gemini-1.5-flash` (overridable via `GEMINI_MODEL` env var).
+- System messages converted to synthetic user/model exchange turns (Gemini does not expose a native system role across all models).
+- Safety settings: `BLOCK_ONLY_HIGH` for harassment and hate speech — permissive enough for agricultural domain.
+- Deterministic fallback unchanged — still triggers when `GEMINI_API_KEY` is absent or `replace-me`.
+- Updated `.env.example`: added `GEMINI_API_KEY` and `GEMINI_MODEL`; commented out `OPENAI_API_KEY`.
+- Get key at: https://aistudio.google.com/app/apikey (free tier available).
 
 ## Latest Upload / Storage Checkpoint
 

@@ -146,6 +146,19 @@ export class AdminService implements OnModuleInit {
       }
     });
 
+    // Synchronize review action back to the original FarmProfile
+    if (before.itemType === 'farm_profile') {
+      const farmStatus = action === 'approve' ? 'active' : action === 'reject' ? 'rejected' : 'pending_review';
+      try {
+        await this.prisma.farmProfile.update({
+          where: { id: before.targetId },
+          data: { status: farmStatus }
+        });
+      } catch (err) {
+        console.warn(`Failed to synchronize status back to FarmProfile ${before.targetId}`, err);
+      }
+    }
+
     const parsedUpdated = {
       ...updated,
       flags: updated.flags as any,

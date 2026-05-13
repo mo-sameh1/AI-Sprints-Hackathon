@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { FarmProfile } from '@ai-sprints/shared-types';
 import { buildFarmProfile } from '@ai-sprints/ai-worker';
 import { PrismaService } from '../prisma/prisma.service';
+import { AdminService } from '../admin/admin.service';
 
 @Injectable()
 export class FarmsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly adminService: AdminService,
+  ) {}
 
   async getAllFarms(): Promise<FarmProfile[]> {
     const farms = await this.prisma.farmProfile.findMany();
@@ -72,6 +76,26 @@ export class FarmsService {
         yieldHistory: farm.yieldHistory as any,
       }
     });
+
+    // Automatically register in Admin Review Queue
+    try {
+      const flags = [];
+      if (created.requestedCapitalUsd > 150000) {
+        flags.push({
+          severity: 'medium',
+          label: 'High Capital Request',
+          detail: `$${created.requestedCapitalUsd.toLocaleString()} is above the standard threshold.`,
+        });
+      }
+      await this.adminService.createReviewItem(
+        'farm_profile',
+        created.id,
+        created.aiProfileSummary || 'New farm profile submitted for review.',
+        flags,
+      );
+    } catch (err) {
+      console.warn('Failed to automatically create admin review item for new farm profile', err);
+    }
 
     return {
       ...created,

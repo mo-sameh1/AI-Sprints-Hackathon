@@ -68,28 +68,35 @@ export class InvestorsService {
     });
 
     // Upsert InvestorProfile
-    const profile = await this.prisma.investorProfile.upsert({
+    await this.prisma.investorProfile.upsert({
       where: { id: investorId },
       update: {
         name: String(payload['name'] ?? 'Investor'),
-        preferences: {
-          upsert: {
-            create: prefs,
-            update: prefs
-          }
-        }
       },
       create: {
         id: investorId,
         userId,
         name: String(payload['name'] ?? 'Investor'),
         portfolio: [],
-        preferences: {
-          create: prefs
-        }
       },
-      include: { preferences: true }
     });
+
+    await this.prisma.investorPreferences.upsert({
+      where: { investorId },
+      update: {
+        riskTolerance: prefs.riskTolerance,
+        investmentHorizonMonths: prefs.investmentHorizonMonths,
+        capitalBudgetUsd: prefs.capitalBudgetUsd,
+        liquidityPreference: prefs.liquidityPreference,
+        preferredCrops: prefs.preferredCrops,
+        preferredRegions: prefs.preferredRegions,
+        expectedRoiPercent: prefs.expectedRoiPercent,
+        sustainabilityFocus: prefs.sustainabilityFocus,
+      },
+      create: prefs,
+    });
+
+    const profile = await this.findInvestorProfile(investorId);
 
     return { status: 'saved', investorId, profile: profile as unknown as InvestorProfile };
   }

@@ -1,19 +1,42 @@
 import { Injectable } from '@nestjs/common';
 import { MatchResult, InvestorPreferences } from '@ai-sprints/shared-types';
 import { rankInvestmentMatches } from '@ai-sprints/ai-worker';
-
-// ── In-memory cache of match results ─────────────────────────────────────────
-const matchCache = new Map<string, MatchResult[]>();
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class MatchesService {
-  rankMatches(
+  constructor(private readonly prisma: PrismaService) {}
+
+  async rankMatches(
     investorId: string,
     preferences: InvestorPreferences,
     farms: ReturnType<typeof Array.prototype.map>
-  ): { investorId: string; matches: MatchResult[]; rankedAt: string } {
+  ): Promise<{ investorId: string; matches: MatchResult[]; rankedAt: string }> {
     const matches = rankInvestmentMatches(investorId, preferences, farms as never);
-    matchCache.set(investorId, matches);
+    
+    // Clear old matches for this investor
+    await this.prisma.matchResult.deleteMany({
+      where: { investorId }
+    });
+
+    // Save new matches
+    if (matches.length > 0) {
+      await this.prisma.matchResult.createMany({
+        data: matches.map(match => ({
+          id: match.id,
+          farmId: match.farmId,
+          investorId: match.investorId,
+          score: match.score,
+          confidence: match.confidence,
+          reasons: match.reasons as any,
+          riskFlags: match.riskFlags as any,
+          horizonFitMonths: match.horizonFitMonths,
+          estimatedRoiPercent: match.estimatedRoiPercent,
+          createdAt: new Date(match.createdAt)
+        }))
+      });
+    }
+
     return {
       investorId,
       matches,
@@ -21,7 +44,20 @@ export class MatchesService {
     };
   }
 
-  getMatchesForInvestor(investorId: string): MatchResult[] | { error: string } {
-    return matchCache.get(investorId) ?? { error: 'No matches found. Submit preferences first.' };
+  async getMatchesForInvestor(investorId: string): Promise<MatchResult[] | { error: string }> {
+    const matches = await this.prisma.matchResult.findMany({
+      where: { investorId }
+    });
+    
+    if (matches.length === 0) {
+      return { error: 'No matches found. Submit preferences first.' };
+    }
+    
+    return matches.map(m => ({
+      ...m,
+      createdAt: m.createdAt.toISOString(),
+      reasons: m.reasons as any,
+      riskFlags: m.riskFlags as any,
+    })) as MatchResult[];
   }
 }

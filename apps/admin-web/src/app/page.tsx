@@ -1,30 +1,28 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth.context';
+import { apiFetch } from '@/lib/api';
 
-const DEMO_STATS = { total: 3, pending: 3, approved: 0, rejected: 0, escalated: 0, criticalFlags: 1 };
+// ── Types ─────────────────────────────────────────────────────────────────────
+interface ReviewItem {
+  id: string; itemType: string; targetId: string; status: string;
+  aiSummary: string; flags: { severity: string; label: string }[];
+  createdAt: string;
+}
+interface AuditEntry {
+  id: string; adminId: string; action: string;
+  targetType: string; targetId: string; timestamp: string;
+}
+interface AdminStats { total: number; pending: number; approved: number; rejected: number; escalated: number; criticalFlags: number; }
 
-const DEMO_QUEUE = [
-  {
-    id: 'review-001', itemType: 'farm_profile', targetId: 'farm-004', status: 'pending',
-    aiSummary: 'New olive farm in North Sinai. No yield history. Capital request of $200K above average.',
-    flags: [{ severity: 'medium', label: 'No Yield History' }, { severity: 'low', label: 'High Capital Request' }],
-    createdAt: '2025-05-05T11:00:00Z',
-  },
-  {
-    id: 'review-002', itemType: 'deal_recommendation', targetId: 'deal-farm-002', status: 'pending',
-    aiSummary: 'Revenue share deal for Upper Egypt Citrus Estate. $96K investment, 17.1% projected ROI.',
-    flags: [{ severity: 'low', label: 'Single Year History' }],
-    createdAt: '2025-05-10T14:00:00Z',
-  },
-  {
-    id: 'review-003', itemType: 'alert', targetId: 'alert-1', status: 'pending',
-    aiSummary: 'Critical weather alert for Delta region. Heavy rainfall projected — 95mm over 3 days.',
-    flags: [{ severity: 'high', label: 'Critical Weather Risk' }],
-    createdAt: '2025-05-12T08:00:00Z',
-  },
+// ── Demo fallbacks ────────────────────────────────────────────────────────────
+const DEMO_STATS: AdminStats = { total: 3, pending: 3, approved: 0, rejected: 0, escalated: 0, criticalFlags: 1 };
+const DEMO_QUEUE: ReviewItem[] = [
+  { id: 'review-001', itemType: 'farm_profile', targetId: 'farm-004', status: 'pending', aiSummary: 'New olive farm in North Sinai. No yield history. Capital request of $200K above average.', flags: [{ severity: 'medium', label: 'No Yield History' }, { severity: 'low', label: 'High Capital Request' }], createdAt: '2025-05-05T11:00:00Z' },
+  { id: 'review-002', itemType: 'deal_recommendation', targetId: 'deal-farm-002', status: 'pending', aiSummary: 'Revenue share deal for Upper Egypt Citrus Estate. $96K investment, 17.1% projected ROI.', flags: [{ severity: 'low', label: 'Single Year History' }], createdAt: '2025-05-10T14:00:00Z' },
+  { id: 'review-003', itemType: 'alert', targetId: 'alert-1', status: 'pending', aiSummary: 'Critical weather alert for Delta region. Heavy rainfall projected — 95mm over 3 days.', flags: [{ severity: 'high', label: 'Critical Weather Risk' }], createdAt: '2025-05-12T08:00:00Z' },
 ];
-
 const DEMO_ALERTS = [
   { id: 'alert-1', severity: 'critical', title: '🚨 Critical: Extreme Weather in Delta', summary: 'Heavy Thunderstorms expected — 95mm rainfall. Risk to active wheat crops.', actionRequired: true },
   { id: 'alert-2', severity: 'warning', title: '⚠️ Weather Watch: Fayoum', summary: 'Extreme Heat forecast. Monitor crop hydration levels.', actionRequired: false },
@@ -39,31 +37,75 @@ const TYPE_CONFIG: Record<string, { icon: string; color: string; label: string }
   match_result: { icon: '🎯', color: 'var(--accent-purple-dim)', label: 'Match' },
 };
 
+const ACTION_ICON: Record<string, string> = {
+  approve: '✅', reject: '❌', escalate: '⬆️', override: '🔧',
+};
+
+function relativeTime(ts: string): string {
+  const diff = Date.now() - new Date(ts).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
 export default function AdminDashboard() {
-  const [stats, setStats] = useState(DEMO_STATS);
-  const [queue, setQueue] = useState(DEMO_QUEUE);
+  const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
+  const router = useRouter();
+
+  const [stats, setStats] = useState<AdminStats>(DEMO_STATS);
+  const [queue, setQueue] = useState<ReviewItem[]>(DEMO_QUEUE);
+  const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
   const [activeTab, setActiveTab] = useState('all');
   const [alerts] = useState(DEMO_ALERTS);
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:4000/api/admin/stats')
-      .then(r => r.json()).then(d => setStats(d)).catch(() => {});
-    fetch('http://localhost:4000/api/admin/queue')
-      .then(r => r.json()).then(d => Array.isArray(d) && d.length ? setQueue(d) : null).catch(() => {});
+    if (!authLoading && !isAuthenticated) router.replace('/login');
+  }, [authLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    const load = async () => {
+      setDataLoading(true);
+      const [statsData, queueData, auditData] = await Promise.allSettled([
+        apiFetch<AdminStats>('/admin/stats'),
+        apiFetch<ReviewItem[]>('/admin/queue'),
+        apiFetch<AuditEntry[]>('/admin/audit'),
+      ]);
+      if (statsData.status === 'fulfilled') setStats(statsData.value);
+      if (queueData.status === 'fulfilled' && Array.isArray(queueData.value) && queueData.value.length)
+        setQueue(queueData.value);
+      if (auditData.status === 'fulfilled' && Array.isArray(auditData.value))
+        setAuditLog(auditData.value);
+      setDataLoading(false);
+    };
+    load();
   }, []);
 
   const filtered = activeTab === 'all' ? queue : queue.filter(i => i.itemType === activeTab || i.status === activeTab);
 
   const handleReview = async (id: string, action: string) => {
     try {
-      await fetch(`http://localhost:4000/api/admin/queue/${id}/review`, {
+      const updated = await apiFetch<ReviewItem>(`/admin/queue/${id}/review`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, adminId: 'admin-001', note: `Action: ${action}` }),
+        body: JSON.stringify({ action, adminId: user?.id ?? 'admin-001', note: `Action: ${action}` }),
       });
-    } catch { /* offline demo */ }
-    setQueue(q => q.map(item => item.id === id ? { ...item, status: action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'escalated' } : item));
+      setQueue(q => q.map(item => item.id === id ? { ...item, status: updated.status ?? (action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'escalated') } : item));
+      // Refresh audit log and stats
+      apiFetch<AuditEntry[]>('/admin/audit').then(d => { if (Array.isArray(d)) setAuditLog(d); }).catch(() => {});
+      apiFetch<AdminStats>('/admin/stats').then(d => setStats(d)).catch(() => {});
+    } catch {
+      setQueue(q => q.map(item => item.id === id ? { ...item, status: action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'escalated' } : item));
+    }
   };
+
+  if (authLoading) return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+      Loading…
+    </div>
+  );
 
   return (
     <div className="admin-shell">
@@ -78,13 +120,13 @@ export default function AdminDashboard() {
         </div>
         <nav className="sidebar-nav">
           {[
-            { icon: '📊', label: 'Dashboard', href: '/', active: true },
-            { icon: '📋', label: 'Review Queue', href: '/', badge: stats.pending, active: false },
-            { icon: '🔔', label: 'Alerts', href: '/', active: false },
-            { icon: '📜', label: 'Audit Log', href: '/', active: false },
-            { icon: '🏡', label: 'Farms', href: '/', active: false },
-            { icon: '👥', label: 'Investors', href: '/', active: false },
-            { icon: '🔧', label: 'Settings', href: '/', active: false },
+            { icon: '📊', label: 'Dashboard', active: true },
+            { icon: '📋', label: 'Review Queue', badge: stats.pending },
+            { icon: '🔔', label: 'Alerts' },
+            { icon: '📜', label: 'Audit Log' },
+            { icon: '🏡', label: 'Farms' },
+            { icon: '👥', label: 'Investors' },
+            { icon: '🔧', label: 'Settings' },
           ].map(item => (
             <div key={item.label} className={`nav-item ${item.active ? 'active' : ''}`}>
               <span>{item.icon}</span>
@@ -95,11 +137,18 @@ export default function AdminDashboard() {
         </nav>
         <div style={{ padding: '16px', borderTop: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'var(--bg-card)', borderRadius: '8px' }}>
-            <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'linear-gradient(135deg,#3b82f6,#a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700 }}>A</div>
-            <div>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>Platform Admin</div>
-              <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>admin@farmvest.io</div>
+            <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'linear-gradient(135deg,#3b82f6,#a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, flexShrink: 0 }}>
+              {(user?.name ?? 'A').charAt(0).toUpperCase()}
             </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name ?? 'Platform Admin'}</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email ?? 'admin@farmvest.io'}</div>
+            </div>
+            <button
+              onClick={() => { logout(); router.push('/login'); }}
+              title="Sign out"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '14px', padding: '2px', flexShrink: 0 }}
+            >↩</button>
           </div>
         </div>
       </aside>
@@ -112,6 +161,7 @@ export default function AdminDashboard() {
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Trust & control layer — review, triage, and audit</div>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {dataLoading && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>⟳ syncing…</span>}
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
           </div>
         </div>
@@ -184,7 +234,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Alerts Sidebar */}
+            {/* Right column: Alerts + Audit Log */}
             <div>
               <h2 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>Active Alerts</h2>
               {alerts.map(alert => (
@@ -204,24 +254,49 @@ export default function AdminDashboard() {
                 </div>
               ))}
 
-              {/* Audit Log */}
+              {/* Audit Log — real data from API */}
               <div style={{ marginTop: '24px' }}>
-                <h2 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px' }}>Recent Activity</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h2 style={{ fontSize: '16px', fontWeight: 700 }}>Audit Log</h2>
+                  {auditLog.length > 0 && (
+                    <span style={{ fontSize: '11px', color: 'var(--accent-blue)', fontWeight: 600 }}>LIVE</span>
+                  )}
+                </div>
                 <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px' }}>
-                  {[
-                    { time: '08:12', action: 'Alert created', target: 'Delta weather alert' },
-                    { time: '07:45', action: 'Farm submitted', target: 'Sinai Olive Grove' },
-                    { time: 'Yesterday', action: 'Deal reviewed', target: 'Citrus Estate deal' },
-                    { time: 'Yesterday', action: 'Farm approved', target: 'Aswan Sugarcane' },
-                  ].map((entry, i) => (
-                    <div key={i} className="audit-row">
-                      <div className="audit-time">{entry.time}</div>
-                      <div>
-                        <div className="audit-action">{entry.action}</div>
-                        <div className="audit-target">{entry.target}</div>
+                  {auditLog.length === 0 ? (
+                    // Static fallback when no actions taken yet
+                    <>
+                      {[
+                        { time: '08:12', action: 'Alert created', target: 'Delta weather alert' },
+                        { time: '07:45', action: 'Farm submitted', target: 'Sinai Olive Grove' },
+                        { time: 'Yesterday', action: 'Deal reviewed', target: 'Citrus Estate deal' },
+                        { time: 'Yesterday', action: 'Farm approved', target: 'Aswan Sugarcane' },
+                      ].map((entry, i) => (
+                        <div key={i} className="audit-row">
+                          <div className="audit-time">{entry.time}</div>
+                          <div>
+                            <div className="audit-action">{entry.action}</div>
+                            <div className="audit-target">{entry.target}</div>
+                          </div>
+                        </div>
+                      ))}
+                      <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        Live entries appear after first review action
                       </div>
-                    </div>
-                  ))}
+                    </>
+                  ) : (
+                    auditLog.slice(0, 8).map(entry => (
+                      <div key={entry.id} className="audit-row">
+                        <div className="audit-time">{relativeTime(entry.timestamp)}</div>
+                        <div>
+                          <div className="audit-action">
+                            {ACTION_ICON[entry.action] ?? '•'} {entry.action} {entry.targetType.replace(/_/g, ' ')}
+                          </div>
+                          <div className="audit-target">{entry.adminId} → {entry.targetId}</div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

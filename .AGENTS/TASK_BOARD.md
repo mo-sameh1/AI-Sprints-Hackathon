@@ -4,6 +4,7 @@
 
 - [x] wire `ai-worker` to real OpenAI/HuggingFace APIs (gpt-4o-mini + deterministic fallback)
 - [x] add JWT Auth for admin, operator, and investor roles (API guards + investor-web auth context)
+- [x] admin-web real audit log from API + RBAC auth guard (JWT + x-role header)
 - [ ] replace weather/news mock providers with real alert APIs
 - [ ] add WhatsApp webhook route for operator message intake
 - [ ] add persistent object storage for operator-uploaded media

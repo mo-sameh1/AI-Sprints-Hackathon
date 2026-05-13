@@ -57,6 +57,23 @@ The next agent should focus on transitioning from the in-memory mock backend to 
 3. ~~Add actual JWT Auth.~~ (Completed — JWT strategy, guards, decorators in API; auth context + login page in investor-web)
 4. Replace remaining integration stubs with vendor-backed HTTP clients after API keys and provider choices are finalized.
 
+## Latest Admin Checkpoint
+
+Date: 2026-05-13
+
+- Added `apps/admin-web/src/lib/api.ts` — `apiFetch` with Bearer + `x-role: admin` RBAC header.
+- Added `apps/admin-web/src/contexts/auth.context.tsx` — `AuthProvider` + `useAuth`; validates role === 'admin' on login.
+- Added `apps/admin-web/src/components/providers.tsx` — layout wrapper.
+- Added `apps/admin-web/src/app/login/page.tsx` — admin login (admin@aisprints.com / password123).
+- Updated `apps/admin-web/src/app/layout.tsx` — wrapped in `Providers`, removed Google Fonts runtime fetch.
+- Rewrote `apps/admin-web/src/app/page.tsx`:
+  - Auth guard: redirects to /login if not authenticated.
+  - Stats, queue, and **audit log** loaded from API (`/admin/stats`, `/admin/queue`, `/admin/audit`).
+  - Review actions (approve/reject/escalate) use `apiFetch` with auth headers; refresh audit + stats after each action.
+  - Audit log shows real entries with relative timestamps; falls back to static placeholder before first action.
+  - Sidebar shows authenticated admin name/email with sign-out button.
+- Added `@/*` path alias to `apps/admin-web/tsconfig.json`.
+
 ## Latest Investor Checkpoint
 
 Date: 2026-05-13

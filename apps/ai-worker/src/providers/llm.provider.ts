@@ -81,25 +81,29 @@ export async function callLlm(
   const temperature = config.temperature ?? 0.3;
 
   if (client) {
-    const generativeModel = client.getGenerativeModel({
-      model: modelName,
-      generationConfig: { temperature },
-      safetySettings: [
-        { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-        { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-      ],
-    });
+    try {
+      const generativeModel = client.getGenerativeModel({
+        model: modelName,
+        generationConfig: { temperature },
+        safetySettings: [
+          { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+          { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+        ],
+      });
 
-    const { history, prompt } = toGeminiHistory(messages);
+      const { history, prompt } = toGeminiHistory(messages);
 
-    const chat = generativeModel.startChat({ history });
-    const result = await chat.sendMessage(prompt);
-    const text = result.response.text();
+      const chat = generativeModel.startChat({ history });
+      const result = await chat.sendMessage(prompt);
+      const text = result.response.text();
 
-    return { content: text, provider: 'gemini', model: modelName };
+      return { content: text, provider: 'gemini', model: modelName };
+    } catch (err) {
+      console.warn('Gemini API call failed (rate limit, key, or network issue). Falling back to deterministic mode.', err);
+    }
   }
 
-  // Deterministic fallback — no key configured
+  // Deterministic fallback — no key configured or call failed
   const lastUser = [...messages].reverse().find((m) => m.role === 'user');
   return {
     content: deterministicFallback(lastUser?.content ?? ''),

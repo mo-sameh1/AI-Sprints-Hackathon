@@ -1,8 +1,10 @@
-import { Body, Controller, Get, Param, Post, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Patch, Logger, InternalServerErrorException } from '@nestjs/common';
 import { FarmsService } from './farms.service';
 
 @Controller('farms')
 export class FarmsController {
+  private readonly logger = new Logger(FarmsController.name);
+
   constructor(private readonly farmsService: FarmsService) {}
 
   @Get()
@@ -21,9 +23,17 @@ export class FarmsController {
   }
 
   @Post()
-  createFarm(@Body() payload: Record<string, unknown>) {
+  async createFarm(@Body() payload: Record<string, unknown>) {
     const operatorId = String(payload['operatorId'] ?? 'op-unknown');
-    return this.farmsService.createFarm(payload, operatorId);
+    this.logger.log(`Creating farm: operatorId=${operatorId} name=${payload['name']}`);
+    try {
+      const result = await this.farmsService.createFarm(payload, operatorId);
+      this.logger.log(`Farm created: ${(result as any).id}`);
+      return result;
+    } catch (err) {
+      this.logger.error(`Farm creation failed: ${(err as Error).message}`, (err as Error).stack);
+      throw new InternalServerErrorException((err as Error).message);
+    }
   }
 
   @Patch(':id/status')

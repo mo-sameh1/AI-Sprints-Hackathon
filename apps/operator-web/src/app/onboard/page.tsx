@@ -121,22 +121,44 @@ export default function OperatorOnboardPage() {
     const imageUrls = readyUploads.filter(asset => asset.kind === 'photo').map(asset => asset.url);
     const documentUrls = readyUploads.filter(asset => asset.kind !== 'photo').map(asset => asset.url);
 
+    const payload = {
+      ...farm,
+      areaHectares: Number(farm.areaHectares),
+      requestedCapitalUsd: Number(farm.requestedCapitalUsd),
+      imageUrls,
+      documentUrls,
+      mediaSummary: readyUploads.map(asset => ({ kind: asset.kind, name: asset.name, size: asset.size, type: asset.type, url: asset.url })),
+    };
+
+    console.log('[FarmSubmit] Submitting payload:', payload);
+    console.log('[FarmSubmit] API endpoint:', `${API_BASE}/api/farms`);
+
     try {
-      await fetch(`${API_BASE}/api/farms`, {
+      const res = await fetch(`${API_BASE}/api/farms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...farm,
-          areaHectares: Number(farm.areaHectares),
-          requestedCapitalUsd: Number(farm.requestedCapitalUsd),
-          imageUrls,
-          documentUrls,
-          mediaSummary: readyUploads.map(asset => ({ kind: asset.kind, name: asset.name, size: asset.size, type: asset.type, url: asset.url })),
-        }),
+        body: JSON.stringify(payload),
       });
-    } catch {
-      // The form still shows the local success state if the demo API is offline.
+
+      console.log('[FarmSubmit] Response status:', res.status, res.statusText);
+
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('[FarmSubmit] Server error response:', errText);
+        alert(`Farm submission failed (${res.status}): ${errText}`);
+        setLoading(false);
+        return;
+      }
+
+      const result = await res.json();
+      console.log('[FarmSubmit] Success! Farm created:', result);
+    } catch (err) {
+      console.error('[FarmSubmit] Network/fetch error:', err);
+      alert(`Farm submission failed: ${(err as Error).message}`);
+      setLoading(false);
+      return;
     }
+
     setSubmitted(true);
     setLoading(false);
   };

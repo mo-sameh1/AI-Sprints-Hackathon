@@ -65,6 +65,28 @@ export class AdminService implements OnModuleInit {
         itemCounter++;
       }
     }
+
+    // Backfill: create review items for farms that slipped through without one
+    const allFarms = await this.prisma.farmProfile.findMany({ where: { status: 'pending_review' } });
+    const existingTargetIds = new Set(
+      (await this.prisma.adminReviewItem.findMany({ select: { targetId: true } })).map(i => i.targetId)
+    );
+    for (const farm of allFarms) {
+      if (!existingTargetIds.has(farm.id)) {
+        await this.prisma.adminReviewItem.create({
+          data: {
+            id: `review-${farm.id}`,
+            itemType: 'farm_profile',
+            targetId: farm.id,
+            status: 'pending',
+            aiSummary: (farm.aiProfileSummary as string | null) ?? `New ${farm.currentCrop} farm submitted from ${farm.region}. Capital request: $${farm.requestedCapitalUsd.toLocaleString()}.`,
+            flags: (farm.yieldHistory as any[]).length === 0
+              ? [{ severity: 'medium', label: 'No Yield History', detail: 'Farm has not submitted any historical yield data.' }] as any
+              : [] as any,
+          }
+        });
+      }
+    }
   }
 
   async getReviewQueue(status?: ReviewStatus): Promise<AdminReviewItem[]> {

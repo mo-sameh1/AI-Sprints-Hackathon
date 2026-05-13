@@ -28,7 +28,7 @@ export interface LlmResponse {
   model: string;
 }
 
-const DEFAULT_MODEL = process.env['GEMINI_MODEL'] ?? 'gemini-1.5-flash';
+const DEFAULT_MODEL = process.env['GEMINI_MODEL'] ?? 'gemini-2.0-flash';
 
 let _gemini: GoogleGenerativeAI | null = null;
 

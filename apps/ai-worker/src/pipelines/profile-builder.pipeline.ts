@@ -140,20 +140,27 @@ async function buildAiSummary(
   water: WaterSource,
   certifications: string[],
 ): Promise<string> {
-  const result = await callLlm([
-    {
-      role: 'system',
-      content:
-        'You are an agricultural investment analyst. Write concise investor-facing farm profile summaries in 2-3 sentences. Focus on investability signals.',
-    },
-    {
-      role: 'user',
-      content:
-        `Summarize this farm for potential investors:\n` +
-        `Name: ${name}\nRegion: ${region}, Egypt\nCrop: ${crop}\nArea: ${area} hectares\n` +
-        `Water source: ${water.replace('_', ' ')}\nProjected ROI: ${roi}%\n` +
-        `Certifications: ${certifications.length ? certifications.join(', ') : 'none'}`,
-    },
-  ]);
-  return result.content;
+  try {
+    const result = await callLlm([
+      {
+        role: 'system',
+        content:
+          'You are an agricultural investment analyst. Write concise investor-facing farm profile summaries in 2-3 sentences. Focus on investability signals.',
+      },
+      {
+        role: 'user',
+        content:
+          `Summarize this farm for potential investors:\n` +
+          `Name: ${name}\nRegion: ${region}, Egypt\nCrop: ${crop}\nArea: ${area} hectares\n` +
+          `Water source: ${water.replace('_', ' ')}\nProjected ROI: ${roi}%\n` +
+          `Certifications: ${certifications.length ? certifications.join(', ') : 'none'}`,
+      },
+    ]);
+    return result.content;
+  } catch {
+    // LLM unavailable — use deterministic summary so farm creation still succeeds
+    return `${name} is a ${area}-hectare ${crop} farm in ${region}, Egypt. ` +
+      `Water source: ${water.replace('_', ' ')}. Projected ROI: ${roi}%.` +
+      (certifications.length ? ` Certifications: ${certifications.join(', ')}.` : '');
+  }
 }

@@ -22,3 +22,15 @@ Build the trust layer.
 - define alert triage page
 - define audit log display needs
 
+## Current Checkpoint
+
+Date: 2026-05-13
+
+- Added JWT Auth with `x-role: admin` RBAC headers.
+- Implemented live audit log fetching from API.
+- Secured all review actions (approve, reject, escalate) behind authenticated requests.
+
+## Next Tasks
+
+- Expand audit log filtering and pagination.
+- Add advanced AI context display for recommendations.

@@ -30,3 +30,15 @@ Investor benefit is the centerpiece of this hackathon story.
 - define recommendation explanation panel
 - define portfolio or watchlist placeholder
 
+## Current Checkpoint
+
+Date: 2026-05-13
+
+- Connected Investor frontend to real API Auth using JWT and localStorage context.
+- Preferences, opportunities, portfolio, and farm detail pages are now protected and use authenticated `apiFetch`.
+- Replaced mock headers with real `Bearer` tokens.
+
+## Next Tasks
+
+- Handle empty states and error flows for missing profile or auth failures.
+- Enhance matching explanation UI with data from the new AI worker payloads.

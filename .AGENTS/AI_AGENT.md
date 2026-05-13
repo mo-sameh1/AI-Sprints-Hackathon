@@ -27,3 +27,14 @@ Own the intelligence layer and evaluation logic.
 - keep investor explanations interpretable
 - do not let generative output replace hard business constraints
 
+## Current Checkpoint
+
+Date: 2026-05-13
+
+- Migrated LLM provider from OpenAI to Google Gemini (`gemini-1.5-flash`).
+- Set deterministic fallback for offline/missing API key scenarios.
+- System roles mapped to synthetic user/model turns for Gemini support.
+
+## Next Tasks
+
+- Wire real AI orchestration to replace remaining mock pipelines.

@@ -46,7 +46,15 @@ Date: 2026-05-12
 - `WhatsappProvider` uses Twilio. Required for real sends: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`.
 - For local inbound webhook testing, expose the API with ngrok and set `TWILIO_WEBHOOK_URL` to the public `/integrations/whatsapp/webhook` URL.
 
+## Current Checkpoint
+
+Date: 2026-05-13
+
+- Added exponential-backoff retry to HTTP integration utility.
+- Implemented `health()` checks across weather, news, and geospatial providers.
+- Aggregated provider health under `GET /integrations/health`.
+
 ## Next Tasks
 
-- add provider health checks and retry/error mapping
 - choose a satellite/map provider for actual NDVI and water-body distance
+- Implement real WhatsApp inbound webhook controller.

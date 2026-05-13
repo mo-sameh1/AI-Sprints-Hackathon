@@ -24,16 +24,16 @@ Make farm submission easy enough that the platform gets usable data quickly.
 
 ## Current Operator Checkpoint
 
-Date: 2026-05-12
+Date: 2026-05-13
 
-- `apps/operator-web/src/app/onboard/page.tsx` now processes selected farm photos, documents, and voice notes with browser `FileReader` and sends ready file data through the existing `imageUrls` and `documentUrls` farm payload fields.
-- `apps/operator-web/src/app/reports/page.tsx` now provides an operator report form wired to `POST /api/reports/submit`, with farm loading from `GET /api/farms` and report history from `GET /api/reports/operator/op-new`.
-- `apps/operator-web/src/app/status/page.tsx` now provides submission tracking against `GET /api/farms`, including review status, attached media counts, and AI profile summaries.
-- `apps/operator-web/src/app/globals.css` includes shared upload, status, metric, and responsive styles for the new operator surfaces.
+- `apps/operator-web/src/app/onboard/page.tsx` now posts files to `POST /api/uploads` and uses real object storage URLs (local disk via multer) instead of data URLs.
+- `apps/operator-web/src/app/reports/page.tsx` provides an operator report form wired to real backend endpoints.
+- `apps/operator-web/src/app/status/page.tsx` provides submission tracking against real API endpoints.
+- `apps/operator-web/src/app/globals.css` includes shared upload, status, metric, and responsive styles.
+- Authentication integration is prepared; pending real auth contexts replacing demo operator IDs.
 
 ## Next Operator Tasks
 
-- Replace data-URL media payloads with object storage URLs once the Platform agent adds persistent storage.
 - Add WhatsApp-first report intake UX once the inbound webhook and message parsing flow are ready.
-- Add authentication-aware operator IDs when real auth replaces the current `op-new` demo operator.
+- Fully wire authentication-aware operator IDs for report submissions.
 

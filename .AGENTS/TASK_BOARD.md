@@ -2,15 +2,15 @@
 
 ## Ready Now (Phase 2: Persistence & Integrations)
 
-- [x] wire `ai-worker` to real OpenAI/HuggingFace APIs (gpt-4o-mini + deterministic fallback)
-- [x] add JWT Auth for admin, operator, and investor roles (API guards + investor-web auth context)
-- [x] admin-web real audit log from API + RBAC auth guard (JWT + x-role header)
 - [ ] replace weather/news mock providers with real alert APIs
 - [ ] add WhatsApp webhook route for operator message intake
-- [x] add persistent object storage for operator-uploaded media (local disk via multer; Docker volume mount)
 
 ## Completed (Phase 2: Persistence & Integrations)
 
+- [x] wire `ai-worker` to real Google Gemini APIs (gemini-1.5-flash + deterministic fallback)
+- [x] add JWT Auth for admin, operator, and investor roles (API guards + investor-web auth context)
+- [x] admin-web real audit log from API + RBAC auth guard (JWT + x-role header)
+- [x] add persistent object storage for operator-uploaded media (local disk via multer; Docker volume mount)
 - [x] initialize Prisma schema based on `shared-types`
 - [x] spin up local Postgres/Redis docker-compose (Or native Postgres)
 - [x] migrate NestJS in-memory maps to Prisma repositories (Matches, Deals, Reports, Admin, Notifications, Farms, and Investors completed)

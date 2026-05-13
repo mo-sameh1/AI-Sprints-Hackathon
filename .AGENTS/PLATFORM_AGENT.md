@@ -39,8 +39,9 @@ Date: 2026-05-13
 - Injected `PrismaService` into all services.
 - Added `apps/api/src/modules/uploads/` with multer disk storage for media.
 - Implemented `JwtStrategy`, `JwtAuthGuard`, `RolesGuard`, and auth decorators.
+- Created `PrismaClientExceptionFilter` to map Prisma errors to HTTP responses across the API.
+- Added `db:migrate:prod` and `db:seed` NPM scripts for database deployment automation.
 
 ## Next Tasks
 
-- Define and implement database migration strategies for production.
-- Refine error handling and reporting across Prisma boundaries.
+- Monitor and scale database connections if traffic demands it.

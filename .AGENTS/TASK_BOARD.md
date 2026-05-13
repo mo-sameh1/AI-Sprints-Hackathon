@@ -7,6 +7,7 @@
 
 ## Completed (Phase 2: Persistence & Integrations)
 
+- [x] implement prisma exception filter and database migration NPM scripts for production
 - [x] wire `ai-worker` to real Google Gemini APIs (gemini-1.5-flash + deterministic fallback)
 - [x] add JWT Auth for admin, operator, and investor roles (API guards + investor-web auth context)
 - [x] admin-web real audit log from API + RBAC auth guard (JWT + x-role header)

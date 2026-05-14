@@ -8,14 +8,27 @@ import { NestFactory, HttpAdapterHost } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { PrismaClientExceptionFilter } from './common/filters/prisma-client-exception.filter';
 
+const defaultCorsOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
+  'http://localhost:3003',
+  'http://localhost:3004',
+  'http://localhost:3005',
+];
+
+function getCorsOrigins() {
+  return (process.env['CORS_ORIGINS'] ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
   app.enableCors({
-    origin: [
-      'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002',
-      'http://localhost:3003', 'http://localhost:3004', 'http://localhost:3005',
-    ],
+    origin: [...defaultCorsOrigins, ...getCorsOrigins()],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   });

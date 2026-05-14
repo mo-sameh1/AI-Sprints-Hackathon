@@ -34,7 +34,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   });
   if (res.status === 401) {
     clearToken();
-    if (typeof window !== 'undefined') window.location.href = '/login';
+    if (typeof window !== 'undefined') window.location.href = '/admin/login';
     throw new Error('Unauthorized');
   }
   if (!res.ok) throw new Error(`API ${res.status}: ${path}`);

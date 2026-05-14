@@ -1,10 +1,19 @@
 # AI Sprints Hackathon
 
-Investor-first scaffold for an AI-powered agricultural investing platform with three personas:
+Investor-first scaffold for an AI-powered agricultural investing platform with one local demo entry and three personas:
 
 - investors
 - farm operators
 - administrators
+
+## Local Demo Entry
+
+Use `http://localhost:3000` as the single website entry point.
+
+- `/investor`: investor experience
+- `/operator`: operator experience, proxied from the operator app
+- `/admin`: admin experience, proxied from the admin app
+- backend API: `http://localhost:4100` for this demo machine when port `4000` is occupied
 
 ## Repo Shape
 

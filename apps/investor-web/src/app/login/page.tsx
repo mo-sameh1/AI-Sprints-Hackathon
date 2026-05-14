@@ -13,7 +13,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      router.replace('/');
+      router.replace('/investor');
     }
   }, [isAuthenticated, loading, router]);
 
@@ -23,7 +23,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login(email, password);
-      router.replace('/');
+      router.replace('/investor');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -125,8 +125,8 @@ export default function LoginPage() {
           </div>
           <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
             {[
-              { label: '🌾 Operator', email: 'mohamed@operator.com', href: 'http://localhost:3002' },
-              { label: '🛡️ Admin', email: 'admin@aisprints.com', href: 'http://localhost:3001' },
+              { label: 'Operator', email: 'mohamed@operator.com', href: '/operator' },
+              { label: 'Admin', email: 'admin@aisprints.com', href: '/admin/login' },
             ].map(a => (
               <a key={a.email} href={a.href} style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',

@@ -96,6 +96,7 @@ function FarmDetailContent() {
   const [deal, setDeal] = useState<typeof DEMO_DEAL | null>(null);
   const [loadingDeal, setLoadingDeal] = useState(true);
   const [added, setAdded] = useState(false);
+  const [investmentFraction, setInvestmentFraction] = useState<number>(25);
 
   useEffect(() => {
     setFarm(FARMS[farmId] ?? null);
@@ -145,6 +146,12 @@ function FarmDetailContent() {
       </div>
     );
   }
+
+  const totalCapital = farm.requestedCapitalUsd;
+  const roiPercent = farm.projectedRoiPercent;
+  const fractionalInvestment = Math.round((investmentFraction / 100) * totalCapital);
+  const projectedGain = Math.round(fractionalInvestment * (roiPercent / 100));
+  const totalEstimatedPayout = fractionalInvestment + projectedGain;
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
@@ -276,8 +283,74 @@ function FarmDetailContent() {
                   </div>
                   <div style={{ width: '1px', background: 'rgba(34,197,94,0.2)' }} />
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Investment</div>
-                    <div style={{ fontSize: '24px', fontWeight: 700 }}>${deal.recommendedInvestmentUsd.toLocaleString()}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Total Investment</div>
+                    <div style={{ fontSize: '24px', fontWeight: 700 }}>${totalCapital.toLocaleString()}</div>
+                  </div>
+                </div>
+
+                {/* Fractional Investment Calculator */}
+                <div style={{
+                  background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                  borderRadius: '12px', padding: '20px', marginBottom: '20px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🍰</span> Fractional Investment Calculator
+                    </div>
+                    <span style={{ fontSize: '12px', background: 'var(--accent-blue-dim)', color: 'var(--accent-blue)', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                      Flexible Share
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: '1.4' }}>
+                    You don't need the full land price. Choose a fraction of the capital to invest and instantly see your projected gains.
+                  </p>
+
+                  <div style={{ marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px', fontWeight: 600 }}>
+                      <span>Investment Share:</span>
+                      <span style={{ color: 'var(--accent-green)' }}>{investmentFraction}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="100"
+                      value={investmentFraction}
+                      onChange={e => setInvestmentFraction(Number(e.target.value))}
+                      style={{ width: '100%', accentColor: 'var(--accent-green)', cursor: 'pointer' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                    {[10, 25, 50, 75, 100].map(pct => (
+                      <button
+                        key={pct}
+                        onClick={() => setInvestmentFraction(pct)}
+                        style={{
+                          flex: 1, padding: '6px', fontSize: '12px', fontWeight: 600,
+                          borderRadius: '6px', border: '1px solid var(--border)', cursor: 'pointer',
+                          background: investmentFraction === pct ? 'var(--accent-green)' : 'var(--bg-primary)',
+                          color: investmentFraction === pct ? '#000' : 'var(--text-primary)',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {pct}%
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', background: 'var(--bg-primary)', padding: '14px', borderRadius: '8px', textAlign: 'center', border: '1px solid var(--border)' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Your Fraction</div>
+                      <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>${fractionalInvestment.toLocaleString()}</div>
+                    </div>
+                    <div style={{ borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Net Gain</div>
+                      <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--accent-green)' }}>+${projectedGain.toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Total Payout</div>
+                      <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>${totalEstimatedPayout.toLocaleString()}</div>
+                    </div>
                   </div>
                 </div>
 
@@ -303,9 +376,9 @@ function FarmDetailContent() {
                   id="express-interest-btn"
                   className="btn btn-primary"
                   style={{ width: '100%', justifyContent: 'center' }}
-                  onClick={() => alert('Interest submitted! The platform team will contact you.')}
+                  onClick={() => alert(`🤝 Interest submitted for a ${investmentFraction}% fractional share ($${fractionalInvestment.toLocaleString()})!\n\nProjected Gain: $${projectedGain.toLocaleString()}\nTotal Payout: $${totalEstimatedPayout.toLocaleString()}\n\nThe platform team will contact you to finalize.`)}
                 >
-                  🤝 Express Interest
+                  🤝 Express Interest ({investmentFraction}% Share)
                 </button>
               </div>
             ) : null}

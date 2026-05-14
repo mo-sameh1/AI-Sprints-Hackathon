@@ -97,6 +97,7 @@ function FarmDetailContent() {
   const [loadingDeal, setLoadingDeal] = useState(true);
   const [added, setAdded] = useState(false);
   const [investmentFraction, setInvestmentFraction] = useState<number>(25);
+  const [investorBudget, setInvestorBudget] = useState<number | null>(null);
 
   useEffect(() => {
     setFarm(FARMS[farmId] ?? null);
@@ -106,6 +107,18 @@ function FarmDetailContent() {
       })
       .catch(() => {});
   }, [farmId]);
+
+  useEffect(() => {
+    if (investorId) {
+      apiFetch<any>(`/api/investors/${investorId}`)
+        .then(data => {
+          if (data && data.preferences && typeof data.preferences.capitalBudgetUsd === 'number') {
+            setInvestorBudget(data.preferences.capitalBudgetUsd);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [investorId]);
 
   useEffect(() => {
     const loadDeal = async () => {
@@ -352,6 +365,12 @@ function FarmDetailContent() {
                       <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>${totalEstimatedPayout.toLocaleString()}</div>
                     </div>
                   </div>
+
+                  {investorBudget !== null && fractionalInvestment > investorBudget && (
+                    <div style={{ marginTop: '16px', background: 'var(--accent-amber-dim)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', padding: '12px', fontSize: '13px', color: 'var(--accent-amber)' }}>
+                      ⚠️ This investment share (${fractionalInvestment.toLocaleString()}) exceeds your saved capital budget of ${investorBudget.toLocaleString()}.
+                    </div>
+                  )}
                 </div>
 
                 <div className="deal-terms">
@@ -376,7 +395,13 @@ function FarmDetailContent() {
                   id="express-interest-btn"
                   className="btn btn-primary"
                   style={{ width: '100%', justifyContent: 'center' }}
-                  onClick={() => alert(`🤝 Interest submitted for a ${investmentFraction}% fractional share ($${fractionalInvestment.toLocaleString()})!\n\nProjected Gain: $${projectedGain.toLocaleString()}\nTotal Payout: $${totalEstimatedPayout.toLocaleString()}\n\nThe platform team will contact you to finalize.`)}
+                  onClick={() => {
+                    if (investorBudget !== null && fractionalInvestment > investorBudget) {
+                      alert(`❌ Operation Denied: Your investment of $${fractionalInvestment.toLocaleString()} exceeds your saved capital budget of $${investorBudget.toLocaleString()}.\n\nPlease adjust your fractional investment share or update your budget in preferences.`);
+                      return;
+                    }
+                    alert(`🤝 Interest submitted for a ${investmentFraction}% fractional share ($${fractionalInvestment.toLocaleString()})!\n\nProjected Gain: $${projectedGain.toLocaleString()}\nTotal Payout: $${totalEstimatedPayout.toLocaleString()}\n\nThe platform team will contact you to finalize.`);
+                  }}
                 >
                   🤝 Express Interest ({investmentFraction}% Share)
                 </button>

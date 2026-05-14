@@ -30,7 +30,25 @@ export default function PreferencesPage() {
   // Sync investorId + name from auth once loaded
   useEffect(() => {
     if (!authLoading && user) {
-      setPrefs(p => ({ ...p, investorId: getInvestorProfileId(user), name: user.name }));
+      const investorId = getInvestorProfileId(user);
+      setPrefs(p => ({ ...p, investorId, name: user.name }));
+      apiFetch<any>(`/api/investors/${investorId}`)
+        .then(data => {
+          if (data && data.preferences) {
+            setPrefs(p => ({
+              ...p,
+              riskTolerance: data.preferences.riskTolerance ?? p.riskTolerance,
+              investmentHorizonMonths: data.preferences.investmentHorizonMonths ?? p.investmentHorizonMonths,
+              capitalBudgetUsd: data.preferences.capitalBudgetUsd ?? p.capitalBudgetUsd,
+              liquidityPreference: data.preferences.liquidityPreference ?? p.liquidityPreference,
+              preferredCrops: data.preferences.preferredCrops ?? p.preferredCrops,
+              preferredRegions: data.preferences.preferredRegions ?? p.preferredRegions,
+              expectedRoiPercent: data.preferences.expectedRoiPercent ?? p.expectedRoiPercent,
+              sustainabilityFocus: data.preferences.sustainabilityFocus ?? p.sustainabilityFocus,
+            }));
+          }
+        })
+        .catch(() => {});
     }
   }, [authLoading, user]);
 
